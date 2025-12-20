@@ -1,21 +1,27 @@
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 WORKDIR /app
 
 # Copy Maven files first for better layer caching
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-COPY mvnw.cmd .
+
+# Install Maven
+RUN apk add --no-cache maven
 
 # Copy source code
-COPY src ./src
+COPY main ./main
+COPY test ./test
 
-# Make mvnw executable
-RUN chmod +x mvnw
+# Build application
+RUN mvn clean package -DskipTests
 
-# Build application using Maven wrapper
-RUN ./mvnw clean package -DskipTests
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Copy the built JAR from the build stage
+COPY --from=build /app/target/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
@@ -27,4 +33,4 @@ RUN addgroup -g 1001 -S springbootapp && \
 USER springbootapp
 
 # Run application
-ENTRYPOINT ["java", "-jar", "target/telemetry-reader-backend-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

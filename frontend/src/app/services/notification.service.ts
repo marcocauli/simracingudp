@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class NotificationService {
-  private notifications: string[] = [];
+  private notifications: { message: string; type: 'success' | 'error' | 'info'; timestamp: number }[] = [];
 
   constructor() {}
 

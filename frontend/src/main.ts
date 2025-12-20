@@ -1,24 +1,20 @@
 import { bootstrapApplication } from '@angular/platform-browser';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { importProvidersFrom } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
-import { AppComponent } from './app/app.component';
-import { AppRoutingModule } from './app/app-routing.module';
+import { AppComponent } from './app/app';
+import { AppRoutingModule } from './app/app-routing-module';
 import { ErrorInterceptor } from './app/interceptors/error.interceptor';
 
 // Import Feature Modules
-import * as featureModules from './app/features';
-
-// Import Angular Material (will be added when NGX-Charts works)
-// import { provideAnimations } from '@angular/platform-browser/animations';
-// import { MatToolbarModule } from '@angular/material/toolbar';
+import { CommonModule } from '@angular/common';
+const featureModules = [CommonModule];
 
 bootstrapApplication(AppComponent, {
   providers: [
     provideHttpClient(),
-    provideHttpClientTesting(),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ErrorInterceptor,

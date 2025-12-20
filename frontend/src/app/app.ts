@@ -6,6 +6,6 @@ import { Component, signal } from '@angular/core';
   standalone: false,
   styleUrl: './app.scss'
 })
-export class App {
-  protected readonly title = signal('frontend');
+export class AppComponent {
+  protected readonly title = signal('telemetry-reader');
 }

@@ -156,7 +156,7 @@ start_services() {
     fi
     
     # Start with docker-compose
-    docker-compose up -d
+    docker compose up -d
     
     print_message $GREEN "✅ Services started"
 }
@@ -174,7 +174,7 @@ start_services_development() {
     fi
     
     # Start with docker-compose with hot reload volumes
-    docker-compose up -d
+    docker compose up -d
     
     print_message $GREEN "✅ Services started in development mode"
 }
@@ -235,7 +235,7 @@ wait_for_services() {
 # Function to show logs
 show_logs() {
     print_message $CYAN "📋 Showing logs (Ctrl+C to exit)..."
-    docker-compose -f "$COMPOSE_FILE" logs -f
+    docker compose -f "$COMPOSE_FILE" logs -f
 }
 
 # Function to show status
