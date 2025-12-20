@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "custom config": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "REMOVED",
+        "api-key": "REMOVED"
+      },
+      "models": {
+        "gpt-4.1-mini": {
+          "tools": true
+        }
+      }
+    }
+  }
+}
