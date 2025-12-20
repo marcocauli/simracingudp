@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  telemetry-app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mock-server
+    networks:
+      - telemetry-network
+
+  mock-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5606:5606/udp"
+    environment:
+      - UDP_PORT=5606
+      - TARGET_HOST=telemetry-app
+      - SESSION_TYPE=race
+      - SESSION_DURATION=3600
+      - UPDATE_RATE=60
+      - ENABLE_TIRE_DEGRADATION=true
+      - ENABLE_FUEL_CONSUMPTION=true
+      - AI_DRIVERS_COUNT=19
+      - VERBOSITY=info
+    networks:
+      - telemetry-network
+    restart: unless-stopped
+
+networks:
+  telemetry-network:
+    driver: bridge

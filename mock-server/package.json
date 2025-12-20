@@ -1,0 +1,23 @@
+{
+  "name": "racing-telemetry-mock",
+  "version": "1.0.0",
+  "description": "Realistic racing telemetry mock server for extended sessions (1m-1h)",
+  "main": "mock-server.js",
+  "scripts": {
+    "start": "node mock-server.js",
+    "test": "node test-client.js"
+  },
+  "keywords": [
+    "racing",
+    "telemetry",
+    "mock",
+    "udp",
+    "automobilista2",
+    "project-cars"
+  ],
+  "author": "SimRacing Telemetry Team",
+  "license": "MIT",
+  "dependencies": {
+    "dgram": "^1.0.1"
+  }
+}

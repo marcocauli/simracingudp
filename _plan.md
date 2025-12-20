@@ -31,13 +31,88 @@ Create a Spring Boot web application that receives, processes, and manages UDP t
 - Set up testing framework with TestContainers support
 - Project ready for Phase 1.2: UDP Server Foundation
 
-### 1.2 UDP Server Foundation
+### 1.2 UDP Server Foundation & Mock Server Integration
+
+#### 1.2.1 Real UDP Server Implementation
 - [ ] Create UDP server component using Spring Boot
 - [ ] Configure UDP listener on port 5606 (default Automobilista 2 port)
 - [ ] Implement basic packet receiving functionality
 - [ ] Add error handling for network issues
 - [ ] Create logging for received packets (packet count, size, timestamp)
-- [ ] Test UDP server with sample data
+
+#### 1.2.2 Advanced Mock Server for Extended Sessions
+- [ ] **Analyze existing NodeJS implementations** (saildeep/pcars2-udp repository)
+- [ ] **Design realistic session simulation framework**:
+  - **Session Types**: Hot Lap (5-15m), Practice (20-30m), Qualifying (15-25m), Race (45-60m)
+  - **Dynamic Duration**: Configurable from 1 minute to 1+ hour sessions
+  - **Configurable Parameters**: Track type, weather conditions, car physics
+
+#### 1.2.3 Realistic Data Generation Engine
+- [ ] **Physics-based Telemetry Simulation**:
+  - **Speed/RPM Curves**: Realistic gear ratios and power bands
+  - **G-Force Modeling**: Cornering, acceleration, braking forces
+  - **Throttle/Brake Patterns**: Real racing line inputs
+  - **Steering Dynamics**: Natural steering angle progression
+  
+- [ ] **Session Evolution Features**:
+  - **Tire Degradation**: Grip loss and temperature effects over time
+  - **Fuel Consumption**: Weight reduction impact on lap times
+  - **Driver Learning**: Progressive lap time improvement
+  - **Pit Stop Simulation**: Realistic pit entry/exit patterns
+
+#### 1.2.4 Advanced Mock Server Architecture
+- [ ] **Multi-Packet Synchronization**:
+  - **Type 0 (Telemetry)**: 60Hz update rate with realistic physics
+  - **Type 1 (Race Data)**: Lap progression with sector times
+  - **Type 2 (Participants)**: Other drivers on track
+  - **Type 3 (Timings)**: Position and gap calculations
+  - **Type 4 (Game State)**: Session state transitions
+
+- [ ] **Traffic & Strategy Simulation**:
+  - **AI Drivers**: Multiple cars with different performance levels
+  - **Weather Variations**: Temperature and track condition changes
+  - **Race Strategy**: Tire compounds and fuel strategies
+
+#### 1.2.5 Docker Integration & Configuration
+- [ ] **Containerized Mock Server**:
+  - **Flexible Configuration**: Environment variables for session type, duration, update rate
+  - **Health Monitoring**: Health checks for UDP stream status
+  - **Log Management**: Structured logging for packet analysis
+  - **Volume Support**: Mountable configuration and data export
+
+- [ ] **Configuration Options**:
+  ```bash
+  # Session Configuration
+  SESSION_TYPE=race        # hotlap, practice, qualifying, race
+  SESSION_DURATION=1800    # seconds (1-3600+)
+  UPDATE_RATE=60           # Hz (default: 60Hz for AMS2)
+  TRACK_COMPLEXITY=high    # simple, medium, high
+  
+  # Realism Settings
+  ENABLE_TIRE_DEGRADATION=true
+  ENABLE_FUEL_CONSUMPTION=true
+  ENABLE_WEATHER_CHANGES=false
+  AI_DRIVERS_COUNT=19
+  ```
+
+#### 1.2.6 Integration Testing Framework
+- [ ] **End-to-End Testing**:
+  - **Extended Session Tests**: Validate 30+ minute sessions
+  - **Data Consistency**: Ensure packet coherence over time
+  - **Performance Testing**: Monitor memory and CPU usage
+  - **Packet Loss Simulation**: Test UDP reliability handling
+
+- [ ] **Validation Criteria**:
+  - **Data Plausibility**: All telemetry values within realistic ranges
+  - **Temporal Consistency**: Smooth progression of values over time
+  - **Packet Integrity**: All packet types synchronized properly
+  - **Session Completion**: Full session lifecycle from start to finish
+
+#### 1.2.7 Testing & Validation
+- [ ] Test UDP server with mock data sample
+- [ ] Validate extended session functionality (1m-1h)
+- [ ] Verify realistic telemetry progression over time
+- [ ] Test Docker deployment and configuration
 
 ### 1.3 Packet Protocol Research & Structures
 - [ ] Study Project CARS 1 UDP packet structure in detail

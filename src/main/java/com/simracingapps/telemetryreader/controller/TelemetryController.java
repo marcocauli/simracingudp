@@ -1,5 +1,6 @@
 package com.simracingapps.telemetryreader.controller;
 
+import com.simracingapps.telemetryreader.service.UdpServerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,12 @@ import java.util.Map;
 public class TelemetryController {
     
     private static final Logger logger = LoggerFactory.getLogger(TelemetryController.class);
+    
+    private final UdpServerService udpServerService;
+    
+    public TelemetryController(UdpServerService udpServerService) {
+        this.udpServerService = udpServerService;
+    }
     
     /**
      * Health check endpoint.
@@ -72,6 +79,31 @@ public class TelemetryController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Telemetry Reader API is working!");
         response.put("timestamp", LocalDateTime.now().toString());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * UDP Server status endpoint.
+     * 
+     * @return Current status of UDP telemetry server
+     */
+    @GetMapping("/udp-status")
+    public ResponseEntity<Map<String, Object>> udpStatus() {
+        logger.debug("UDP server status requested");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("serverRunning", udpServerService.isServerRunning());
+        response.put("listeningPort", udpServerService.getListeningPort());
+        response.put("timestamp", LocalDateTime.now());
+        
+        if (udpServerService.isServerRunning()) {
+            response.put("status", "ACTIVE");
+            response.put("message", "UDP server is listening for telemetry data");
+        } else {
+            response.put("status", "INACTIVE");
+            response.put("message", "UDP server is not running");
+        }
         
         return ResponseEntity.ok(response);
     }
