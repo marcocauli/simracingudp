@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Racing Telemetry Stack Reset & Deployment Script
-# Gestione completa backend/frontend/mock-server in monorepo
+# Gestione completa backend/frontend/mock-server in monorepo con build esterna
 
 set -e
 
@@ -44,7 +44,14 @@ check_docker() {
 stop_containers() {
     print_message $YELLOW "🛑 Stopping existing containers..."
     
-    # Kill any running containers using our ports
+    # Stop all compose services
+    cd "$SCRIPT_DIR"
+    if docker compose ps -q 2>/dev/null | grep -q .; then
+        docker compose down 2>/dev/null || true
+        print_message $GREEN "✅ Containers stopped via docker compose"
+    fi
+    
+    # Kill any remaining containers using our ports
     local containers_to_stop=$(docker ps -q --filter "publish=8080" 2>/dev/null || true)
     if [ -n "$containers_to_stop" ]; then
         docker stop $containers_to_stop
@@ -64,88 +71,122 @@ stop_containers() {
     fi
 }
 
-# Function to remove containers
-remove_containers() {
-    print_message $YELLOW "🗑️  Removing containers..."
+# Function to remove containers and images
+cleanup_docker() {
+    print_message $YELLOW "🗑️  Removing containers and images..."
     
-    # Remove containers
-    docker rm -f $(docker ps -aq --filter "publish=8080" 2>/dev/null) 2>/dev/null || true
-    docker rm -f $(docker ps -aq --filter "publish=4200" 2>/dev/null) 2>/dev/null || true
-    docker rm -f $(docker ps -aq --filter "publish=5606" 2>/dev/null) 2>/dev/null || true
+    cd "$SCRIPT_DIR"
     
-    print_message $GREEN "✅ Containers removed"
+    # Remove containers and images via compose
+    docker compose down --rmi all --volumes --remove-orphans 2>/dev/null || true
+    
+    # Remove any remaining custom images
+    docker rmi -f simracingapp-backend 2>/dev/null || true
+    docker rmi -f simracingapp-frontend 2>/dev/null || true
+    docker rmi -f simracingapp-mock-server 2>/dev/null || true
+    
+    print_message $GREEN "✅ Docker cleanup completed"
 }
 
-# Function to remove images
-remove_images() {
-    print_message $YELLOW "🏷️  Removing images..."
-    
-    # Remove our custom images
-    docker rmi -f telemetry-reader-backend 2>/dev/null || true
-    docker rmi -f telemetry-frontend 2>/dev/null || true
-    docker rmi -f racing-telemetry-mock 2>/dev/null || true
-    
-    print_message $GREEN "✅ Images removed"
-}
-
-# Function to clean up volumes
-clean_volumes() {
-    print_message $YELLOW "📦 Cleaning up volumes..."
-    
-    # Remove anonymous volumes
-    docker volume prune -f 2>/dev/null || true
-    
-    print_message $GREEN "✅ Volumes cleaned"
-}
-
-# Function to build backend
-build_backend() {
-    print_message $CYAN "🔨 Building backend..."
+# Function to build backend externally
+build_backend_external() {
+    print_message $CYAN "🔨 Building backend externally with Docker..."
     
     cd "$BACKEND_DIR"
-    export PATH=$PATH:/tmp/apache-maven-3.9.6/bin
     
-    # Check if Maven wrapper exists
-    if [ -f "mvnw" ]; then
-        ./mvnw clean package -DskipTests
-    else
-        export PATH=$PATH:/tmp/apache-maven-3.9.6/bin
-        mvn clean package -DskipTests
-    fi
+    # Always use Docker for consistent Java 21 environment
+    print_message $YELLOW "⚠️  Using Docker for backend build to ensure Java 21 compatibility"
+    
+    # Use Docker for Maven build
+    docker run --rm \
+        -v "$BACKEND_DIR":/app \
+        -w /app \
+        eclipse-temurin:21-jdk-alpine \
+        sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
     
     if [ $? -eq 0 ]; then
         print_message $GREEN "✅ Backend built successfully"
+        
+        # Verify JAR was created and copy to expected location
+        JAR_FILE="target/telemetry-reader-backend-0.0.1-SNAPSHOT.jar"
+        if [ -f "$JAR_FILE" ]; then
+            print_message $GREEN "✅ JAR file created at $JAR_FILE"
+            
+            # Copy JAR to a consistent location if needed
+            if [ ! -f "target/app.jar" ]; then
+                cp "$JAR_FILE" "target/app.jar"
+                print_message $GREEN "✅ JAR copied to target/app.jar for Docker"
+            fi
+        else
+            print_message $RED "❌ JAR file not found after build"
+            ls -la target/ || echo "target directory does not exist"
+            exit 1
+        fi
     else
         print_message $RED "❌ Backend build failed"
         exit 1
     fi
 }
 
-# Function to build frontend
-build_frontend() {
-    print_message $CYAN "🎨 Building frontend..."
+# Function to build frontend externally
+build_frontend_external() {
+    print_message $CYAN "🎨 Building frontend externally..."
     
     cd "$FRONTEND_DIR"
     
-    # Install dependencies if node_modules doesn't exist
-    if [ ! -d "node_modules" ]; then
-        npm install
+    # Check if Node.js is available
+    if ! command -v node &> /dev/null; then
+        print_message $YELLOW "⚠️  Node.js not found locally, using Docker for frontend build..."
+        
+        # Use Docker for Node.js build
+        docker run --rm \
+            -v "$FRONTEND_DIR":/app \
+            -w /app \
+            node:20-alpine \
+            sh -c "npm ci --legacy-peer-deps && npm run build"
+    else
+        # Check Node.js version
+        NODE_VERSION=$(node -v | cut -d'v' -f2)
+        if [ "$NODE_VERSION" -lt 20 ]; then
+            print_message $YELLOW "⚠️  Node.js version $NODE_VERSION detected, using Docker for frontend build..."
+            
+            docker run --rm \
+                -v "$FRONTEND_DIR":/app \
+                -w /app \
+                node:20-alpine \
+                sh -c "npm ci --legacy-peer-deps && npm run build"
+        else
+            print_message $GREEN "✅ Using local Node.js v$NODE_VERSION for frontend build"
+            
+            # Install dependencies if node_modules doesn't exist
+            if [ ! -d "node_modules" ]; then
+                npm ci --legacy-peer-deps
+            fi
+            
+            # Build Angular app
+            npm run build
+        fi
     fi
-    
-    # Build Angular app
-    npm run build --prod
     
     if [ $? -eq 0 ]; then
         print_message $GREEN "✅ Frontend built successfully"
+        
+        # Verify build was created
+        if [ -d "dist/frontend" ]; then
+            print_message $GREEN "✅ Frontend dist created successfully"
+        else
+            print_message $RED "❌ Frontend dist not found after build"
+            exit 1
+        fi
     else
         print_message $RED "❌ Frontend build failed"
         exit 1
     fi
 }
 
-# Function to start services
-start_services() {
-    print_message $CYAN "🚀 Starting services..."
+# Function to start services with Docker build
+start_services_with_build() {
+    print_message $CYAN "🚀 Building Docker images and starting services..."
     
     cd "$SCRIPT_DIR"
     
@@ -155,28 +196,15 @@ start_services() {
         exit 1
     fi
     
-    # Start with docker-compose
-    docker compose up -d
+    # Build and start with docker-compose (rebuilds from scratch each time)
+    docker compose up --build -d
     
-    print_message $GREEN "✅ Services started"
-}
-
-# Function to start services for development (hot reload)
-start_services_development() {
-    print_message $CYAN "🚀 Starting services in development mode..."
-    
-    cd "$SCRIPT_DIR"
-    
-    # Check if compose file exists
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        print_message $RED "❌ docker-compose.yml not found at $COMPOSE_FILE"
+    if [ $? -eq 0 ]; then
+        print_message $GREEN "✅ Services built and started successfully"
+    else
+        print_message $RED "❌ Failed to start services"
         exit 1
     fi
-    
-    # Start with docker-compose with hot reload volumes
-    docker compose up -d
-    
-    print_message $GREEN "✅ Services started in development mode"
 }
 
 # Function to wait for services to be ready
@@ -186,7 +214,7 @@ wait_for_services() {
     # Wait for Spring Boot
     local spring_boot_ready=false
     for i in {1..30}; do
-        if curl -s http://localhost:8080/v1/health > /dev/null 2>&1; then
+        if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
             spring_boot_ready=true
             break
         fi
@@ -223,13 +251,12 @@ wait_for_services() {
     
     # Show mock server status
     print_message $CYAN "📡 Mock Server info:"
-    echo "   Mock Server running in standalone mode"
-    echo "   To test: cd $MOCK_SERVER_DIR && node mock-server.js"
+    echo "   Mock Server running in container on UDP port 5606"
     echo ""
     echo -e "${CYAN}📊 Service URLs:${NC}"
     echo -e "   ${GREEN}Backend API:${NC} http://localhost:8080"
     echo -e "   ${GREEN}Frontend:${NC}   http://localhost:4200"
-    echo -e "   ${GREEN}UDP Status:${NC} http://localhost:8080/v1/udp-status"
+    echo -e "   ${GREEN}Backend Health:${NC} http://localhost:8080/actuator/health"
 }
 
 # Function to show logs
@@ -244,7 +271,7 @@ show_status() {
     echo ""
     
     # Backend status
-    if curl -s http://localhost:8080/v1/health > /dev/null 2>&1; then
+    if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
         print_message $GREEN "✅ Backend: RUNNING (http://localhost:8080)"
     else
         print_message $RED "❌ Backend: DOWN"
@@ -257,20 +284,8 @@ show_status() {
         print_message $RED "❌ Frontend: DOWN"
     fi
     
-    # UDP Server status
-    if curl -s http://localhost:8080/v1/udp-status > /dev/null 2>&1; then
-        local udp_status=$(curl -s http://localhost:8080/v1/udp-status 2>/dev/null | jq -r '.status' 2>/dev/null || echo "ACTIVE")
-        if [ "$udp_status" = "ACTIVE" ]; then
-            print_message $GREEN "✅ UDP Server: LISTENING (port 5606)"
-        else
-            print_message $YELLOW "⚠️  UDP Server: INACTIVE"
-        fi
-    else
-        print_message $RED "❌ UDP Server: DOWN"
-    fi
-    
     # Mock Server status
-    local mock_running=$(docker ps --filter "ancestor=racing-telemetry-mock" --format "table {{.Names}}" 2>/dev/null | grep -v NAMES || echo "")
+    local mock_running=$(docker ps --filter "name=simracingapp-mock-server" --format "table {{.Names}}" 2>/dev/null | grep -v NAMES || echo "")
     if [ -n "$mock_running" ]; then
         print_message $GREEN "✅ Mock Server: RUNNING"
     else
@@ -280,20 +295,51 @@ show_status() {
     echo ""
 }
 
-# Function to development mode
+# Function to show usage
+show_usage() {
+    echo -e "${CYAN}Usage: $0 [command]${NC}"
+    echo ""
+    echo -e "${PURPLE}Commands:${NC}"
+    echo -e "  ${GREEN}start${NC}         Build all sources externally and start services (Docker)"
+    echo -e "  ${GREEN}dev${NC}           Start development mode (hot reload with local tools)"
+    echo -e "  ${GREEN}stop${NC}          Stop all services"
+    echo -e "  ${GREEN}restart${NC}       Rebuild and restart all services"
+    echo -e "  ${GREEN}reset${NC}        Complete cleanup: stop, remove containers and images"
+    echo -e "  ${GREEN}clean${NC}        Deep clean (remove containers, images, volumes)"
+    echo -e "  ${GREEN}build${NC}        Build all sources externally (no Docker start)"
+    echo -e "  ${GREEN}build-backend${NC}   Build backend only (external)"
+    echo -e "  ${GREEN}build-frontend${NC}  Build frontend only (external)"
+    echo -e "  ${GREEN}logs${NC}         Show logs from running services"
+    echo -e "  ${GREEN}status${NC}       Show current service status"
+    echo ""
+    echo -e "${YELLOW}Workflow:${NC}"
+    echo -e "  1. ${CYAN}$0 start${NC}         # Builds sources externally + Docker containers"
+    echo -e "  2. ${CYAN}$0 dev${NC}           # Local development with hot reload"
+    echo -e "  3. ${CYAN}$0 restart${NC}       # Full rebuild and restart"
+    echo ""
+}
+
+# Development mode (local tools with hot reload)
 start_development() {
     print_message $CYAN "🛠️  Starting development mode..."
     
     # Start backend in dev mode
     cd "$BACKEND_DIR"
-    export PATH=$PATH:/tmp/apache-maven-3.9.6/bin
-    mvn spring-boot:run &
+    if [ -f "mvnw" ]; then
+        ./mvnw spring-boot:run &
+    else
+        mvn spring-boot:run &
+    fi
     local backend_pid=$!
     echo "Backend PID: $backend_pid"
     
     # Start frontend in dev mode
     cd "$FRONTEND_DIR"
-    ng serve &
+    if command -v ng &> /dev/null; then
+        ng serve &
+    else
+        npm start &
+    fi
     local frontend_pid=$!
     echo "Frontend PID: $frontend_pid"
     
@@ -319,42 +365,18 @@ start_development() {
     done
 }
 
-# Function to show usage
-show_usage() {
-    echo -e "${CYAN}Usage: $0 [command]${NC}"
-    echo ""
-    echo -e "${PURPLE}Commands:${NC}"
-    echo -e "  ${GREEN}start${NC}         Build and start all services (Docker)"
-    echo -e "  ${GREEN}dev${NC}           Start development mode (hot reload)"
-    echo -e "  ${GREEN}stop${NC}          Stop all services"
-    echo -e "  ${GREEN}restart${NC}       Restart all services"
-    echo -e "  ${GREEN}reset${NC}        Stop, remove containers and images"
-    echo -e "  ${GREEN}clean${NC}        Deep clean (remove containers, images, volumes)"
-    echo -e "  ${GREEN}build${NC}        Build all services"
-    echo -e "  ${GREEN}build-backend${NC}   Build backend only"
-    echo -e "  ${GREEN}build-frontend${NC}  Build frontend only"
-    echo -e "  ${GREEN}logs${NC}         Show logs from running services"
-    echo -e "  ${GREEN}status${NC}       Show current service status"
-    echo ""
-    echo -e "${YELLOW}Examples:${NC}"
-    echo -e "  $0 start           # Build and start everything (Docker)"
-    echo -e "  $0 dev             # Start development mode with hot reload"
-    echo -e "  $0 restart         # Restart all services"
-    echo -e "  $0 clean           # Deep clean everything"
-    echo ""
-}
-
 # Parse command line arguments
 case "${1:-help}" in
     "start")
         check_docker
         stop_containers
-        start_services_development
+        build_backend_external
+        build_frontend_external
+        start_services_with_build
         wait_for_services
         show_status
         ;;
     "dev"|"development")
-        print_message $CYAN "🛠️  Starting development mode..."
         start_development
         ;;
     "stop")
@@ -365,37 +387,34 @@ case "${1:-help}" in
     "restart")
         check_docker
         stop_containers
-        build_backend
-        build_frontend
-        start_services
+        build_backend_external
+        build_frontend_external
+        start_services_with_build
         wait_for_services
         show_status
         ;;
     "reset")
         check_docker
         stop_containers
-        remove_containers
-        remove_images
-        clean_volumes
+        cleanup_docker
         print_message $GREEN "✅ Reset completed"
         ;;
     "clean")
         check_docker
         stop_containers
-        remove_containers
-        remove_images
-        clean_volumes
+        cleanup_docker
+        docker system prune -f
         print_message $GREEN "✅ Deep clean completed"
         ;;
     "build")
-        build_backend
-        build_frontend
+        build_backend_external
+        build_frontend_external
         ;;
     "build-backend")
-        build_backend
+        build_backend_external
         ;;
     "build-frontend")
-        build_frontend
+        build_frontend_external
         ;;
     "logs")
         show_logs

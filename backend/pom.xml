@@ -13,6 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>telemetry-reader-backend</name>
     <description>Spring Boot Racing Telemetry Manager - Backend Module</description>
+    <packaging>jar</packaging>
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -111,6 +112,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.simracingapps.telemetryreader.TelemetryReaderApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -127,7 +129,7 @@
                 <version>3.11.0</version>
                 <configuration>
                     <source>21</source>
-                    <target>21</target>
+                    <target>25</target>
                 </configuration>
             </plugin>
             

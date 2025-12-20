@@ -43,17 +43,17 @@ public class UdpServerService {
     @PostConstruct
     public void startServer() {
         try {
-            serverSocket = new DatagramSocket(telemetryProperties.getUdpPort());
+            serverSocket = new DatagramSocket(telemetryProperties.getUdp().getPort());
             isRunning.set(true);
             
-            log.info("UDP Server started on port {}", telemetryProperties.getUdpPort());
+            log.info("UDP Server started on port {}", telemetryProperties.getUdp().getPort());
             log.info("Listening for telemetry data from racing simulators...");
             
             // Start listening for packets asynchronously
             CompletableFuture.runAsync(this::listenForPackets, executorService);
             
         } catch (SocketException e) {
-            log.error("Failed to start UDP server on port {}", telemetryProperties.getUdpPort(), e);
+            log.error("Failed to start UDP server on port {}", telemetryProperties.getUdp().getPort(), e);
             throw new RuntimeException("Could not start UDP server", e);
         }
     }
