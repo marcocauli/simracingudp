@@ -1,5 +1,9 @@
 # Racing Telemetry Reader - Agent Guidelines
 
+## Direttive AI
+Dopo ogni esecuzione devo aggiornare tutti i file README.md che sono presenti nel progetto
+Dopo ogni esecuzione devo aggiornare il file "_plan.md" per marcare i progressi eseguiti e nuovi task eseguiti
+
 ## Build/Test Commands
 ```bash
 # Build project
