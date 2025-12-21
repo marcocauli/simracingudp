@@ -1,36 +1,76 @@
 # Racing Telemetry Reader - Agent Guidelines
 
-## Direttive AI
-Dopo ogni esecuzione devo aggiornare tutti i file README.md che sono presenti nel progetto
-Dopo ogni esecuzione devo aggiornare il file "_plan.md" per marcare i progressi eseguiti e nuovi task eseguiti
+## Documentation Updates
+After every execution update all README.md files and the most relevant plan file in "opencode_docs" to mark completed progress and new tasks.
 
 ## Build/Test Commands
+
+### Backend (Java/Maven)
 ```bash
-# Build project
-mvn clean compile
+# Build backend
+cd backend && mvn clean compile
 
 # Run all tests
-mvn test
+cd backend && mvn test
 
 # Run single test class
-mvn test -Dtest=TelemetryReaderApplicationTests
+cd backend && mvn test -Dtest=TelemetryReaderApplicationTests
 
 # Run single test method
-mvn test -Dtest=TelemetryControllerTests#healthCheck
+cd backend && mvn test -Dtest=TelemetryControllerTests#healthCheck
 
 # Run with coverage
-mvn test jacoco:report
+cd backend && mvn test jacoco:report
 
 # Run application
-mvn spring-boot:run
+cd backend && mvn spring-boot:run
 
 # Package
-mvn clean package
+cd backend && mvn clean package
+```
+
+### Frontend (Angular/TypeScript)
+```bash
+# Build frontend
+cd frontend && npm run build
+
+# Start development server
+cd frontend && npm start
+
+# Run tests
+cd frontend && npm test
+
+# Run tests with coverage
+cd frontend && npm run test -- --code-coverage
+
+# Lint code
+cd frontend && npm run lint
+
+# Format code
+cd frontend && npx prettier --write "src/**/*.ts"
+
+# Type check
+cd frontend && npx tsc --noEmit
+```
+
+### Full Stack
+```bash
+# Start all services
+./reset-stack.sh start
+
+# Start development mode
+./reset-stack.sh dev
+
+# Stop all services
+./reset-stack.sh stop
+
+# Build all projects
+./reset-stack.sh build
 ```
 
 ## Code Style Guidelines
 
-### Java Conventions
+### Java Backend Conventions
 - **Java Version**: 21+ (compatible with Java 25)
 - **Framework**: Spring Boot 3.2.0, use Spring annotations (@RestController, @Service, @Repository, @Component)
 - **Packages**: `com.simracingapps.telemetryreader.*` (lowercase, dot-separated)
@@ -39,48 +79,66 @@ mvn clean package
 - **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_UDP_PORT`, `PACKET_HEADER_SIZE`)
 - **Variables**: camelCase with descriptive names
 
+### Angular Frontend Conventions
+- **Components**: PascalCase with .component.ts/.html/.scss files
+- **Services**: PascalCase with .service.ts (e.g., `TelemetryService`)
+- **Models**: PascalCase with .models.ts or interface definitions
+- **Imports**: Organize 1) Angular imports 2) Third-party 3) Project imports
+- **TypeScript**: Strict mode enabled, prefer explicit types over 'any'
+
 ### Import Organization
-1. `java.*` imports
-2. `javax.*` imports  
-3. Third-party imports (org.springframework, com.fasterxml, etc.)
-4. Project imports (com.simracingapps.*)
-Use wildcard imports sparingly; prefer explicit imports.
+**Java**: 1) `java.*` 2) `javax.*` 3) Third-party 4) Project imports  
+**TypeScript**: 1) @angular/* 2) Third-party 3) @/* project imports
 
 ### Documentation
-- **JavaDoc**: Required for all public classes and methods with @param, @return, @throws
-- **Comments**: Explain business logic, complex algorithms, and protocol-specific details
-- **Logging**: Use SLF4J with class-level static loggers: `private static final Logger log = LoggerFactory.getLogger(ClassName.class);`
+- **JavaDoc**: Required for public classes/methods with @param, @return, @throws
+- **TypeScript**: Use TSDoc for public interfaces/services
+- **Comments**: Explain business logic, complex algorithms, protocol details
+- **Logging**: SLF4J for backend, console.log for frontend (use appropriate levels)
 
 ### Error Handling
-- **REST APIs**: Use `ResponseEntity` with appropriate HTTP status codes
+- **REST APIs**: Use `ResponseEntity` with proper HTTP status codes
 - **Exceptions**: Create custom exceptions for domain-specific errors
-- **Validation**: Use `@Valid` and Spring Validation annotations
-- **Logging**: Log errors at ERROR level with context, debug at DEBUG level
+- **Validation**: Use `@Valid` (backend) and Angular Validators
+- **Frontend**: ErrorInterceptor + NotificationService for user feedback
 
 ### Configuration Management
-- **Properties**: Use `@ConfigurationProperties(prefix = "telemetry")` pattern
-- **Nested Configs**: Use static inner classes for grouped settings
-- **Profiles**: Use `@ActiveProfiles("test")` for test configurations
+- **Backend**: `@ConfigurationProperties(prefix = "telemetry")` pattern
+- **Frontend**: Environment-specific configs via Angular CLI environments
+- **Profiles**: `@ActiveProfiles("test")` for backend test configs
 
 ### Testing Standards
-- **Framework**: JUnit 5 with Spring Boot Test
-- **TestContainers**: Use for integration tests with real database
-- **Naming**: `[ClassName]Tests` for test classes, `[methodName]()` for test methods
+**Backend**: JUnit 5 + Spring Boot Test + TestContainers
+- **Naming**: `[ClassName]Tests` for classes, `[methodName]()` for methods
 - **Annotations**: `@SpringBootTest`, `@Test`, `@MockBean`, `@TestPropertySource`
 
+**Frontend**: Jasmine + Angular Testing Library
+- **Naming**: `[ComponentName].component.spec.ts`
+- **Testing**: Use TestBed, fixtures, async/await for async operations
+
 ### UDP/Telemetry Specific
-- **Packet Processing**: Handle binary data with ByteBuffer, respect endianness
-- **Performance**: Use reactive programming (WebFlux) for high-frequency data
-- **Validation**: Always validate packet size and structure before parsing
-- **Logging**: Log packet counts, sizes, and errors; don't log raw packet data
+- **Packet Processing**: ByteBuffer with little-endian handling
+- **Performance**: WebFlux for high-frequency data, OnPush change detection
+- **Validation**: Always validate packet size/structure before parsing
+- **Security**: Never log raw packet data, sanitize inputs
 
 ### Code Quality
-- **Lombok**: Use `@Data` for DTOs, `@Slf4j` for logging, `@Builder` for complex objects
-- **Immutability**: Use `final` where possible, prefer immutable data structures
-- **Null Safety**: Use `@NonNull`, `Optional<T>`, and proper null checks
-- **Coverage**: Maintain >80% test coverage (JaCoCo reports in target/site/jacoco)
+- **Backend**: Lombok (`@Data`, `@Slf4j`, `@Builder`), immutability, `@NonNull`
+- **Frontend**: Strict TypeScript, no implicit any, prefer interfaces
+- **Coverage**: >80% for backend, comprehensive component tests for frontend
+- **Linting**: ESLint + Prettier (frontend), SonarQube rules (backend)
+
+### Performance
+- **Backend**: Reactive streams, batch processing, connection pooling
+- **Frontend**: OnPush change detection, trackBy functions, virtual scrolling
+- **Memory**: Clean up subscriptions, use weak references where appropriate
 
 ### Domain Context
 - **Simulators**: Automobilista 2, Project CARS 1/2 using Project CARS 1 UDP protocol
 - **Protocol**: UDP port 5606, packet types 0-4 (Telemetry, Race, Participants, Timings, GameState)
-- **Data Flow**: UDP reception → binary parsing → domain objects → persistence → REST/WebSocket APIs
+- **Data Flow**: UDP reception → binary parsing → domain objects → persistence → WebSocket → Frontend
+
+### Development Environment
+- **Editor**: VSCode with Angular extension
+- **Formatting**: EditorConfig with 2-space indentation, single quotes for TypeScript
+- **Code Quality**: ESLint + Prettier (frontend), SonarQube rules (backend)

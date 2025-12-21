@@ -90,19 +90,70 @@ cleanup_docker() {
 
 # Function to build backend externally
 build_backend_external() {
-    print_message $CYAN "🔨 Building backend externally with Docker..."
+    print_message $CYAN "🔨 Building backend externally..."
     
     cd "$BACKEND_DIR"
     
-    # Always use Docker for consistent Java 21 environment
-    print_message $YELLOW "⚠️  Using Docker for backend build to ensure Java 21 compatibility"
+    # Fix ownership issues from previous Docker builds
+    if [ -d "target" ]; then
+        print_message $YELLOW "🔧 Fixing permissions from previous builds..."
+        # Try to fix permissions without sudo
+        find target -type f -exec chmod 644 {} \; 2>/dev/null || true
+        find target -type d -exec chmod 755 {} \; 2>/dev/null || true
+    fi
     
-    # Use Docker for Maven build
-    docker run --rm \
-        -v "$BACKEND_DIR":/app \
-        -w /app \
-        eclipse-temurin:21-jdk-alpine \
-        sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
+    # Check if Java is available locally
+    if ! command -v java &> /dev/null; then
+        print_message $YELLOW "⚠️  Java not found locally, using Docker for backend build to ensure Java 21 compatibility"
+        
+        # Use Docker for Maven build with proper user mapping
+        docker run --rm \
+            -v "$BACKEND_DIR":/app \
+            -w /app \
+            -u "$(id -u):$(id -g)" \
+            eclipse-temurin:21-jdk-alpine \
+            sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
+    else
+        # Check Java version
+        JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
+        if [ "$JAVA_VERSION" -lt 21 ]; then
+            print_message $YELLOW "⚠️  Java version $JAVA_VERSION detected, using Docker for backend build to ensure Java 21 compatibility"
+            
+            docker run --rm \
+                -v "$BACKEND_DIR":/app \
+                -w /app \
+                -u "$(id -u):$(id -g)" \
+                eclipse-temurin:21-jdk-alpine \
+                sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
+        else
+            # Check if target directory has permission issues
+            if [ -d "target" ] && [ ! -w "target" ]; then
+                print_message $YELLOW "⚠️  Permission issues detected in target directory, using Docker for build"
+                
+                docker run --rm \
+                    -v "$BACKEND_DIR":/app \
+                    -w /app \
+                    eclipse-temurin:21-jdk-alpine \
+                    sh -c "apk add --no-cache maven && mvn clean package -DskipTests && chown -R $(id -u):$(id -g) target/"
+            else
+                print_message $GREEN "✅ Using local Java for backend build"
+                
+                # Use local Maven if available, otherwise use Docker for Maven
+                if command -v mvn &> /dev/null; then
+                    # Try to clean first, but continue if it fails
+                    mvn clean 2>/dev/null || true
+                    mvn package -DskipTests
+                else
+                    docker run --rm \
+                        -v "$BACKEND_DIR":/app \
+                        -w /app \
+                        -u "$(id -u):$(id -g)" \
+                        eclipse-temurin:21-jdk-alpine \
+                        sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
+                fi
+            fi
+        fi
+    fi
     
     if [ $? -eq 0 ]; then
         print_message $GREEN "✅ Backend built successfully"
@@ -112,10 +163,11 @@ build_backend_external() {
         if [ -f "$JAR_FILE" ]; then
             print_message $GREEN "✅ JAR file created at $JAR_FILE"
             
-            # Copy JAR to a consistent location if needed
-            if [ ! -f "target/app.jar" ]; then
-                cp "$JAR_FILE" "target/app.jar"
-                print_message $GREEN "✅ JAR copied to target/app.jar for Docker"
+            # Copy JAR to backend target for Docker
+            mkdir -p "$BACKEND_DIR/target"
+            if [ ! -f "$BACKEND_DIR/target/app.jar" ]; then
+                cp "$JAR_FILE" "$BACKEND_DIR/target/app.jar"
+                print_message $GREEN "✅ JAR copied to backend/target/app.jar for Docker"
             fi
         else
             print_message $RED "❌ JAR file not found after build"
