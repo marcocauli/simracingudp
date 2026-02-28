@@ -1,4 +1,103 @@
 <div class="dashboard">
-  <h1>Dashboard Telemetria</h1>
-  <p>Caricamento componenti...</p>
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🏎️</span>
+      <h1>Racing Telemetry</h1>
+    </div>
+    <div class="status" [class.connected]="isConnected">
+      <span class="status-dot"></span>
+      <span class="status-text">{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="telemetry-grid">
+      <!-- Speed Display -->
+      <div class="telemetry-card speed-card">
+        <div class="card-header">Speed</div>
+        <div class="speed-display">
+          <span class="speed-value">{{ formatSpeed(speed) }}</span>
+          <span class="speed-unit">km/h</span>
+        </div>
+      </div>
+
+      <!-- RPM Display -->
+      <div class="telemetry-card rpm-card">
+        <div class="card-header">RPM</div>
+        <div class="rpm-display">
+          <div class="rpm-bar-container">
+            <div class="rpm-bar" [style.width.%]="(rpm / 8000) * 100"></div>
+            <div class="rpm-redline"></div>
+          </div>
+          <span class="rpm-value">{{ formatRpm(rpm) }}</span>
+        </div>
+      </div>
+
+      <!-- Gear Display -->
+      <div class="telemetry-card gear-card">
+        <div class="card-header">Gear</div>
+        <div class="gear-display">
+          <span class="gear-value">{{ gear }}</span>
+        </div>
+      </div>
+
+      <!-- Throttle/Brake -->
+      <div class="telemetry-card pedal-card">
+        <div class="card-header">Throttle / Brake</div>
+        <div class="pedal-display">
+          <div class="pedal throttle">
+            <div class="pedal-bar" [style.height.%]="throttle"></div>
+            <span class="pedal-label">T</span>
+            <span class="pedal-value">{{ throttle | number:'1.0-0' }}%</span>
+          </div>
+          <div class="pedal brake">
+            <div class="pedal-bar" [style.height.%]="brake"></div>
+            <span class="pedal-label">B</span>
+            <span class="pedal-value">{{ brake | number:'1.0-0' }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steering -->
+      <div class="telemetry-card steering-card">
+        <div class="card-header">Steering</div>
+        <div class="steering-display">
+          <div class="steering-bar">
+            <div class="steering-indicator" [style.left.%]="50 + (steering * 40)"></div>
+          </div>
+          <span class="steering-value">{{ steering | number:'1.1-1' }}°</span>
+        </div>
+      </div>
+
+      <!-- Fuel -->
+      <div class="telemetry-card fuel-card">
+        <div class="card-header">Fuel</div>
+        <div class="fuel-display">
+          <div class="fuel-bar-container">
+            <div class="fuel-bar" [style.width.%]="fuelLevel" [class.low]="fuelLevel < 20"></div>
+          </div>
+          <span class="fuel-value">{{ fuelLevel | number:'1.1-1' }}%</span>
+        </div>
+      </div>
+
+      <!-- Lap Timing -->
+      <div class="telemetry-card lap-timing-card">
+        <app-lap-timing
+          [currentLap]="telemetryData?.currentLap ?? 0"
+          [currentSector]="telemetryData?.currentSector ?? 1"
+          [currentSector1Time]="telemetryData?.sector1Time ?? 0"
+          [currentSector2Time]="telemetryData?.sector2Time ?? 0"
+          [currentSector3Time]="telemetryData?.sector3Time ?? 0"
+          [lastLapTime]="telemetryData?.lastLapTime ?? 0"
+          [lastSector1Time]="telemetryData?.lastSector1Time ?? 0"
+          [lastSector2Time]="telemetryData?.lastSector2Time ?? 0"
+          [lastSector3Time]="telemetryData?.lastSector3Time ?? 0"
+          [bestLapTime]="telemetryData?.bestLapTime ?? 0"
+          [bestSector1Time]="telemetryData?.bestSector1Time ?? 0"
+          [bestSector2Time]="telemetryData?.bestSector2Time ?? 0"
+          [bestSector3Time]="telemetryData?.bestSector3Time ?? 0"
+        ></app-lap-timing>
+      </div>
+    </div>
+  </main>
 </div>

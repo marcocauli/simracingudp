@@ -1,3 +1,6 @@
 /.idea/
 /target/
 /backend/target/
+**/.classpath
+**/.project
+**/.factorypath

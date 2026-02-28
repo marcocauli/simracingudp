@@ -60,12 +60,26 @@ class RacingPhysicsEngine {
                 { start: 3800, end: 4150, targetSpeed: 240 }
             ],
             trackLength: 5000,
-            surfaceGrip: 0.95
+            surfaceGrip: 0.95,
+            sectorDistances: [1666.67, 3333.33, 5000] // 3 sectors at 1/3 each
         };
 
         this.lapHistory = [];
         this.sectorTimes = [];
         this.currentSector = 1;
+        
+        // Sector tracking
+        this.currentSectorStartTime = 0;
+        this.currentSector1Time = 0;
+        this.currentSector2Time = 0;
+        this.currentSector3Time = 0;
+        this.lastSector1Time = 0;
+        this.lastSector2Time = 0;
+        this.lastSector3Time = 0;
+        this.bestLapTime = 0;
+        this.bestSector1Time = 0;
+        this.bestSector2Time = 0;
+        this.bestSector3Time = 0;
     }
 
     /**
@@ -333,6 +347,12 @@ class RacingPhysicsEngine {
         this.updateFuelConsumption(this.sessionState.lapDistance, currentSpeed, throttle);
         this.updateDriverFatigue(this.sessionState.sessionTime);
         
+        // Track sectors
+        const newSector = this.getCurrentSector(distance);
+        if (newSector !== this.currentSector) {
+            this.updateSectorTimes(newSector);
+        }
+        
         // Check lap completion
         if (this.sessionState.lapDistance >= this.trackProfile.trackLength) {
             this.completeLap();
@@ -352,8 +372,56 @@ class RacingPhysicsEngine {
             lapDistance: this.sessionState.lapDistance,
             sessionTime: this.sessionState.sessionTime,
             lateralG: lateralG,
-            longitudinalG: longitudinalG
+            longitudinalG: longitudinalG,
+            currentSector: this.currentSector,
+            sector1Time: this.currentSector1Time,
+            sector2Time: this.currentSector2Time,
+            sector3Time: this.currentSector3Time,
+            lastLapTime: this.lastLapTime,
+            lastSector1Time: this.lastSector1Time,
+            lastSector2Time: this.lastSector2Time,
+            lastSector3Time: this.lastSector3Time,
+            bestLapTime: this.bestLapTime,
+            bestSector1Time: this.bestSector1Time,
+            bestSector2Time: this.bestSector2Time,
+            bestSector3Time: this.bestSector3Time
         };
+    }
+
+    /**
+     * Get current sector based on distance
+     */
+    getCurrentSector(distance) {
+        if (distance < this.trackProfile.sectorDistances[0]) {
+            return 1;
+        } else if (distance < this.trackProfile.sectorDistances[1]) {
+            return 2;
+        } else {
+            return 3;
+        }
+    }
+
+    /**
+     * Update sector times when crossing sector boundaries
+     */
+    updateSectorTimes(newSector) {
+        const sessionTime = this.sessionState.sessionTime;
+        
+        if (newSector === 2 && this.currentSector === 1) {
+            // Crossed sector 1 -> 2
+            this.currentSector1Time = sessionTime - this.currentSectorStartTime;
+            this.currentSectorStartTime = sessionTime;
+        } else if (newSector === 3 && this.currentSector === 2) {
+            // Crossed sector 2 -> 3
+            this.currentSector2Time = sessionTime - this.currentSectorStartTime;
+            this.currentSectorStartTime = sessionTime;
+        } else if (newSector === 1 && this.currentSector === 3) {
+            // Crossed sector 3 -> 1 (lap complete handled separately)
+            this.currentSector3Time = sessionTime - this.currentSectorStartTime;
+            this.currentSectorStartTime = sessionTime;
+        }
+        
+        this.currentSector = newSector;
     }
 
     /**
@@ -387,17 +455,42 @@ class RacingPhysicsEngine {
     }
 
     completeLap() {
+        const sessionTime = this.sessionState.sessionTime;
+        
+        // Store sector times for completed lap
+        this.lastSector1Time = this.currentSector1Time;
+        this.lastSector2Time = this.currentSector2Time;
+        this.lastSector3Time = this.currentSector3Time;
+        
+        // Calculate lap time
+        const lapTime = this.lastSector1Time + this.lastSector2Time + this.lastSector3Time;
+        this.lastLapTime = lapTime;
+        
+        // Update best times
+        if (this.bestLapTime === 0 || lapTime < this.bestLapTime) {
+            this.bestLapTime = lapTime;
+            this.bestSector1Time = this.lastSector1Time;
+            this.bestSector2Time = this.lastSector2Time;
+            this.bestSector3Time = this.lastSector3Time;
+        }
+        
         this.sessionState.currentLap++;
         this.sessionState.lapDistance = 0;
         
-        // Store lap time (simplified)
-        const lapTime = this.sessionState.sessionTime - 
-                      (this.lapHistory.length > 0 ? this.lapHistory[this.lapHistory.length - 1].sessionTime : 0);
+        // Reset current sector times for new lap
+        this.currentSector1Time = 0;
+        this.currentSector2Time = 0;
+        this.currentSector3Time = 0;
+        this.currentSectorStartTime = sessionTime;
+        this.currentSector = 1;
         
         this.lapHistory.push({
-            lapNumber: this.sessionState.currentLap,
+            lapNumber: this.sessionState.currentLap - 1,
             lapTime: lapTime,
-            sessionTime: this.sessionState.sessionTime,
+            sector1Time: this.lastSector1Time,
+            sector2Time: this.lastSector2Time,
+            sector3Time: this.lastSector3Time,
+            sessionTime: sessionTime,
             fuelUsed: this.carConfig.maxFuel - this.sessionState.fuelLevel,
             avgTireWear: this.sessionState.tireWear.reduce((a, b) => a + b) / 4
         });
@@ -417,6 +510,21 @@ class RacingPhysicsEngine {
             airTemperature: 20
         };
         this.lapHistory = [];
+        
+        // Reset sector tracking
+        this.currentSector = 1;
+        this.currentSectorStartTime = 0;
+        this.currentSector1Time = 0;
+        this.currentSector2Time = 0;
+        this.currentSector3Time = 0;
+        this.lastSector1Time = 0;
+        this.lastSector2Time = 0;
+        this.lastSector3Time = 0;
+        this.lastLapTime = 0;
+        this.bestLapTime = 0;
+        this.bestSector1Time = 0;
+        this.bestSector2Time = 0;
+        this.bestSector3Time = 0;
     }
 }
 

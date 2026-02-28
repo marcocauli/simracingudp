@@ -137,6 +137,19 @@ class RaceData {
         this.mUnfilteredBrake = 0;
         this.mUnfilteredSteering = 0;
         this.mUnfilteredClutch = 0;
+        
+        // Sector times (in seconds)
+        this.mCurrentSector1Time = 0;
+        this.mCurrentSector2Time = 0;
+        this.mCurrentSector3Time = 0;
+        this.mLastLapTime = 0;
+        this.mLastSector1Time = 0;
+        this.mLastSector2Time = 0;
+        this.mLastSector3Time = 0;
+        this.mBestLapTime = 0;
+        this.mBestSector1Time = 0;
+        this.mBestSector2Time = 0;
+        this.mBestSector3Time = 0;
     }
 }
 

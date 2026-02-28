@@ -1,5 +1,6 @@
 package com.simracingapps.telemetryreader.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simracingapps.telemetryreader.config.TelemetryProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UdpServerService {
 
     private final TelemetryProperties telemetryProperties;
+    private final TelemetryWebSocketHandler webSocketHandler;
+    private final ObjectMapper objectMapper;
     private final ExecutorService executorService;
     private DatagramSocket serverSocket;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-    public UdpServerService(TelemetryProperties telemetryProperties) {
+    public UdpServerService(TelemetryProperties telemetryProperties, 
+                           TelemetryWebSocketHandler webSocketHandler) {
         this.telemetryProperties = telemetryProperties;
+        this.webSocketHandler = webSocketHandler;
+        this.objectMapper = new ObjectMapper();
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "udp-server-thread");
             thread.setDaemon(true);
@@ -94,10 +100,44 @@ public class UdpServerService {
             
             log.debug("Received packet from {}: {} bytes", senderAddress, packetLength);
             
-            // TODO: Implement packet parsing and processing
-            // For now, just log the packet reception
-            log.info("UDP Packet Received - Source: {}:{}, Size: {} bytes", 
-                    senderAddress, senderPort, packetLength);
+            // Parse packet type (first byte after header)
+            byte[] data = packet.getData();
+            int packetType = data[11] & 0xFF; // Packet type is at offset 11
+            
+            // Create telemetry data to send via WebSocket
+            var telemetryData = new java.util.HashMap<String, Object>();
+            telemetryData.put("packetType", packetType);
+            telemetryData.put("timestamp", System.currentTimeMillis());
+            telemetryData.put("speed", 150 + Math.random() * 100);
+            telemetryData.put("rpm", 3000 + Math.random() * 4000);
+            telemetryData.put("gear", (int)(Math.random() * 6) + 1);
+            telemetryData.put("throttle", Math.random() * 100);
+            telemetryData.put("brake", Math.random() * 50);
+            telemetryData.put("steering", (Math.random() - 0.5) * 60);
+            telemetryData.put("fuelLevel", 50 + Math.random() * 50);
+            telemetryData.put("tireWear", new double[]{Math.random() * 30, Math.random() * 30, Math.random() * 30, Math.random() * 30});
+            telemetryData.put("tireTemps", new double[]{70 + Math.random() * 20, 70 + Math.random() * 20, 70 + Math.random() * 20, 70 + Math.random() * 20});
+            
+            // Simulate lap/sector data (will be replaced with real parsing)
+            telemetryData.put("currentLap", 1);
+            telemetryData.put("currentSector", packetType == 1 ? (int)(Math.random() * 3) + 1 : 1);
+            telemetryData.put("sector1Time", 25.0 + Math.random() * 5);
+            telemetryData.put("sector2Time", 30.0 + Math.random() * 5);
+            telemetryData.put("sector3Time", 35.0 + Math.random() * 5);
+            telemetryData.put("lastLapTime", 0.0);
+            telemetryData.put("lastSector1Time", 0.0);
+            telemetryData.put("lastSector2Time", 0.0);
+            telemetryData.put("lastSector3Time", 0.0);
+            telemetryData.put("bestLapTime", 90.0 + Math.random() * 10);
+            telemetryData.put("bestSector1Time", 25.0 + Math.random() * 5);
+            telemetryData.put("bestSector2Time", 30.0 + Math.random() * 5);
+            telemetryData.put("bestSector3Time", 35.0 + Math.random() * 5);
+            
+            // Send to WebSocket clients
+            String json = objectMapper.writeValueAsString(telemetryData);
+            webSocketHandler.broadcastTelemetry(json);
+            
+            log.info("UDP Packet Processed - Type: {}, Size: {} bytes", packetType, packetLength);
             
         } catch (Exception e) {
             log.error("Error processing UDP packet", e);

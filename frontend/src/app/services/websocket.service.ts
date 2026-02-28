@@ -13,6 +13,19 @@ export interface TelemetryData {
   fuelLevel: number;
   tireWear: number[];
   tireTemps: number[];
+  currentLap: number;
+  currentSector: number;
+  sector1Time: number;
+  sector2Time: number;
+  sector3Time: number;
+  lastLapTime: number;
+  lastSector1Time: number;
+  lastSector2Time: number;
+  lastSector3Time: number;
+  bestLapTime: number;
+  bestSector1Time: number;
+  bestSector2Time: number;
+  bestSector3Time: number;
 }
 
 @Injectable({

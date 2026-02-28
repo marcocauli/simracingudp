@@ -1,0 +1,149 @@
+.lap-timing {
+  background: linear-gradient(145deg, #1e1e2f, #252538);
+  border-radius: 12px;
+  padding: 16px;
+  color: #fff;
+  font-family: 'Roboto Mono', monospace;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #8b8b9e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .best-lap {
+      .label {
+        color: #8b8b9e;
+        font-size: 11px;
+        margin-right: 4px;
+      }
+      .time {
+        color: #00ff88;
+        font-size: 14px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .current-sector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    .sector {
+      flex: 1;
+      background: #15151f;
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      border: 1px solid #2a2a3d;
+      transition: all 0.2s ease;
+
+      &.active {
+        background: linear-gradient(145deg, #2a2a4d, #1e1e3d);
+        border-color: #4a4aff;
+        box-shadow: 0 0 12px rgba(74, 74, 255, 0.3);
+      }
+
+      &.best {
+        border-color: #00ff88;
+        
+        .sector-time {
+          color: #00ff88;
+        }
+      }
+
+      .sector-label {
+        display: block;
+        font-size: 10px;
+        color: #6b6b7d;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      .sector-time {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .delta {
+        display: block;
+        font-size: 10px;
+        color: #ff4444;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .lap-list {
+    .lap-header {
+      display: grid;
+      grid-template-columns: 40px 1fr 1fr 1fr 1fr;
+      gap: 4px;
+      padding: 8px 4px;
+      font-size: 10px;
+      color: #6b6b7d;
+      text-transform: uppercase;
+      border-bottom: 1px solid #2a2a3d;
+    }
+
+    .lap-row {
+      display: grid;
+      grid-template-columns: 40px 1fr 1fr 1fr 1fr;
+      gap: 4px;
+      padding: 8px 4px;
+      font-size: 12px;
+      border-bottom: 1px solid #1e1e2a;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      &.best {
+        background: rgba(0, 255, 136, 0.08);
+        
+        .lap-time.best {
+          color: #00ff88;
+          font-weight: 600;
+        }
+      }
+
+      .lap-number {
+        color: #8b8b9e;
+        font-weight: 500;
+      }
+
+      .sector-time {
+        color: #aaa;
+
+        &.best {
+          color: #00ff88;
+        }
+      }
+
+      .lap-time {
+        color: #fff;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .no-laps {
+    text-align: center;
+    padding: 20px;
+    color: #6b6b7d;
+    font-size: 12px;
+  }
+}

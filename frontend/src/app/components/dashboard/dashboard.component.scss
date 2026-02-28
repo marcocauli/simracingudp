@@ -1,6 +1,297 @@
 .dashboard {
-  padding: 20px;
   min-height: 100vh;
-  background: #1a1a2e;
+  background: #0d0d14;
   color: #fff;
+  font-family: 'Roboto', sans-serif;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #0d0d14 100%);
+    border-bottom: 1px solid #2a2a3d;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .logo-icon {
+        font-size: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        background: linear-gradient(90deg, #fff, #8b8b9e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #15151f;
+      border-radius: 20px;
+      border: 1px solid #2a2a3d;
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ff4444;
+      }
+
+      &.connected .status-dot {
+        background: #00ff88;
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+      }
+
+      .status-text {
+        font-size: 12px;
+        color: #8b8b9e;
+      }
+    }
+  }
+
+  .content {
+    padding: 24px;
+  }
+
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .telemetry-card {
+    background: linear-gradient(145deg, #1e1e2f, #252538);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #2a2a3d;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b6b7d;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+  }
+
+  .speed-card {
+    .speed-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+
+      .speed-value {
+        font-size: 64px;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+        color: #fff;
+        line-height: 1;
+      }
+
+      .speed-unit {
+        font-size: 16px;
+        color: #6b6b7d;
+      }
+    }
+  }
+
+  .rpm-card {
+    .rpm-display {
+      .rpm-bar-container {
+        height: 8px;
+        background: #15151f;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+
+        .rpm-bar {
+          height: 100%;
+          background: linear-gradient(90deg, #4a4aff, #8b8bff);
+          border-radius: 4px;
+          transition: width 0.1s ease;
+        }
+
+        .rpm-redline {
+          position: absolute;
+          right: 15%;
+          top: 0;
+          width: 2px;
+          height: 100%;
+          background: #ff4444;
+        }
+      }
+
+      .rpm-value {
+        font-size: 24px;
+        font-weight: 600;
+        font-family: 'Roboto Mono', monospace;
+        color: #fff;
+      }
+    }
+  }
+
+  .gear-card {
+    .gear-display {
+      .gear-value {
+        font-size: 72px;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+        color: #4a4aff;
+        line-height: 1;
+      }
+    }
+  }
+
+  .pedal-card {
+    .pedal-display {
+      display: flex;
+      gap: 16px;
+
+      .pedal {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+
+        .pedal-bar {
+          width: 100%;
+          height: 80px;
+          background: #15151f;
+          border-radius: 8px;
+          position: relative;
+          overflow: hidden;
+
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--height, 0%);
+            background: var(--color, #4a4aff);
+            transition: height 0.1s ease;
+          }
+        }
+
+        &.throttle .pedal-bar::after {
+          --color: #00ff88;
+        }
+
+        &.brake .pedal-bar::after {
+          --color: #ff4444;
+        }
+
+        .pedal-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #8b8b9e;
+        }
+
+        .pedal-value {
+          font-size: 12px;
+          font-family: 'Roboto Mono', monospace;
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .steering-card {
+    .steering-display {
+      .steering-bar {
+        height: 12px;
+        background: #15151f;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        position: relative;
+
+        .steering-indicator {
+          position: absolute;
+          top: -4px;
+          width: 4px;
+          height: 20px;
+          background: #4a4aff;
+          border-radius: 2px;
+          transition: left 0.1s ease;
+        }
+      }
+
+      .steering-value {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'Roboto Mono', monospace;
+        color: #fff;
+      }
+    }
+  }
+
+  .fuel-card {
+    .fuel-display {
+      .fuel-bar-container {
+        height: 12px;
+        background: #15151f;
+        border-radius: 6px;
+        margin-bottom: 8px;
+
+        .fuel-bar {
+          height: 100%;
+          background: linear-gradient(90deg, #4a4aff, #8b8bff);
+          border-radius: 6px;
+          transition: width 0.3s ease;
+
+          &.low {
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+          }
+        }
+      }
+
+      .fuel-value {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'Roboto Mono', monospace;
+        color: #fff;
+      }
+    }
+  }
+
+  .lap-timing-card {
+    grid-column: span 2;
+
+    @media (max-width: 900px) {
+      grid-column: span 1;
+    }
+  }
 }

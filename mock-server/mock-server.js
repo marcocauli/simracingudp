@@ -288,9 +288,9 @@ class RacingTelemetryMockServer {
         packet.mIsGreenFlag = 1;
         packet.mIsWhiteFlag = 0;
         packet.mIsGreenFlagLap = telemetry.lapNumber === 1;
-        packet.mIsSector1 = telemetry.lapDistance > 1000 && telemetry.lapDistance < 2000;
-        packet.mIsSector2 = telemetry.lapDistance > 2000 && telemetry.lapDistance < 3500;
-        packet.mIsSector3 = telemetry.lapDistance > 3500;
+        packet.mIsSector1 = telemetry.currentSector === 1;
+        packet.mIsSector2 = telemetry.currentSector === 2;
+        packet.mIsSector3 = telemetry.currentSector === 3;
         packet.mIsLastLap = sessionTime > this.sessionConfig.duration - 120;
         packet.mShouldPit = telemetry.fuelLevel < 20 || Math.max(...telemetry.tireWear) > 80;
         packet.mCurrentDriverIndex = 0;
@@ -299,6 +299,19 @@ class RacingTelemetryMockServer {
         packet.mUnfilteredBrake = Math.floor(telemetry.brake);
         packet.mUnfilteredSteering = Math.floor(telemetry.steering);
         packet.mUnfilteredClutch = 0;
+        
+        // Sector times
+        packet.mCurrentSector1Time = telemetry.sector1Time || 0;
+        packet.mCurrentSector2Time = telemetry.sector2Time || 0;
+        packet.mCurrentSector3Time = telemetry.sector3Time || 0;
+        packet.mLastLapTime = telemetry.lastLapTime || 0;
+        packet.mLastSector1Time = telemetry.lastSector1Time || 0;
+        packet.mLastSector2Time = telemetry.lastSector2Time || 0;
+        packet.mLastSector3Time = telemetry.lastSector3Time || 0;
+        packet.mBestLapTime = telemetry.bestLapTime || 0;
+        packet.mBestSector1Time = telemetry.bestSector1Time || 0;
+        packet.mBestSector2Time = telemetry.bestSector2Time || 0;
+        packet.mBestSector3Time = telemetry.bestSector3Time || 0;
 
         this.sendUdpPacket(packet);
     }

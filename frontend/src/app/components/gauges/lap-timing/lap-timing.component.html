@@ -1,0 +1,48 @@
+<div class="lap-timing">
+  <div class="header">
+    <h3>Lap Timing</h3>
+    <div class="best-lap" *ngIf="bestLapTime > 0">
+      <span class="label">Best:</span>
+      <span class="time">{{ formatTime(bestLapTime) }}</span>
+    </div>
+  </div>
+
+  <div class="current-sector">
+    <div class="sector" [class.active]="currentSector === 1" [class.best]="isBestSector(currentSector1Time, bestSector1Time)">
+      <span class="sector-label">S1</span>
+      <span class="sector-time">{{ formatTime(currentSector1Time) }}</span>
+      <span class="delta" *ngIf="bestSector1Time > 0">{{ getDelta(currentSector1Time, bestSector1Time) }}</span>
+    </div>
+    <div class="sector" [class.active]="currentSector === 2" [class.best]="isBestSector(currentSector2Time, bestSector2Time)">
+      <span class="sector-label">S2</span>
+      <span class="sector-time">{{ formatTime(currentSector2Time) }}</span>
+      <span class="delta" *ngIf="bestSector2Time > 0">{{ getDelta(currentSector2Time, bestSector2Time) }}</span>
+    </div>
+    <div class="sector" [class.active]="currentSector === 3" [class.best]="isBestSector(currentSector3Time, bestSector3Time)">
+      <span class="sector-label">S3</span>
+      <span class="sector-time">{{ formatTime(currentSector3Time) }}</span>
+      <span class="delta" *ngIf="bestSector3Time > 0">{{ getDelta(currentSector3Time, bestSector3Time) }}</span>
+    </div>
+  </div>
+
+  <div class="lap-list">
+    <div class="lap-header">
+      <span>Lap</span>
+      <span>S1</span>
+      <span>S2</span>
+      <span>S3</span>
+      <span>Time</span>
+    </div>
+    <div class="lap-row" *ngFor="let lap of laps; trackBy: trackByLap" [class.best]="isBestLap(lap.lapTime)">
+      <span class="lap-number">{{ lap.lapNumber }}</span>
+      <span class="sector-time" [class.best]="isBestSector(lap.sector1Time, bestSector1Time)">{{ formatTime(lap.sector1Time) }}</span>
+      <span class="sector-time" [class.best]="isBestSector(lap.sector2Time, bestSector2Time)">{{ formatTime(lap.sector2Time) }}</span>
+      <span class="sector-time" [class.best]="isBestSector(lap.sector3Time, bestSector3Time)">{{ formatTime(lap.sector3Time) }}</span>
+      <span class="lap-time" [class.best]="isBestLap(lap.lapTime)">{{ formatTime(lap.lapTime) }}</span>
+    </div>
+  </div>
+
+  <div class="no-laps" *ngIf="laps.length === 0 && lastLapTime === 0">
+    <p>Waiting for lap data...</p>
+  </div>
+</div>
