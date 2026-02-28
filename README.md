@@ -74,11 +74,28 @@ A comprehensive racing telemetry management system with Spring Boot backend and 
 
 ## Features
 
-- Real-time UDP telemetry data reception
+- Real-time UDP telemetry data reception (port 5606)
+- Binary packet parsing for Project CARS 1 UDP protocol
 - REST API for accessing telemetry data
-- WebSocket support for live telemetry streaming
-- Data persistence and analytics
-- Web dashboard for visualization
+- WebSocket support for live telemetry streaming (planned)
+- Data persistence and analytics (planned)
+- Web dashboard for visualization (planned)
+
+## Implemented
+
+### Backend (Phase 1 Complete)
+- UDP Server listening on port 5606
+- Packet Type enum (5 packet types: Telemetry, Race Data, Participants, Timings, Game State)
+- Packet models: TelemetryPacket, RaceDataPacket, TimingsPacket, GameStatePacket
+- PacketParser utility with ByteBuffer little-endian parsing
+- Event publishing for telemetry data
+- Packet statistics (packets received, processed, packets/sec)
+
+### Frontend (Planned)
+- Angular 17 standalone application ready
+- WebSocket service implemented
+- Telemetry service implemented
+- Dashboard components to be implemented
 
 ## Supported Simulators
 
@@ -108,9 +125,10 @@ A comprehensive racing telemetry management system with Spring Boot backend and 
 
 ### API Endpoints
 
-- `GET /api/v1/health` - Health check
-- `GET /api/v1/info` - Application information
-- `GET /api/v1/test` - Test endpoint
+- `GET /v1/health` - Health check
+- `GET /v1/info` - Application information
+- `GET /v1/test` - Test endpoint
+- `GET /v1/udp-status` - UDP server status with packets/sec metrics
 
 ### Configuration
 
@@ -156,19 +174,38 @@ Coverage report will be generated in `target/site/jacoco/index.html`
 ## Project Structure
 
 ```
-src/
-├── main/
-│   ├── java/com/simracingapps/telemetryreader/
-│   │   ├── TelemetryReaderApplication.java
-│   │   ├── config/
-│   │   ├── controller/
-│   │   ├── service/
-│   │   ├── model/
-│   │   └── repository/
-│   └── resources/
-│       └── application.properties
-└── test/
-    └── java/com/simracingapps/telemetryreader/
+backend/
+├── src/main/java/com/simracingapps/telemetryreader/
+│   ├── TelemetryReaderApplication.java
+│   ├── config/
+│   │   ├── TelemetryProperties.java
+│   │   └── CorsConfig.java
+│   ├── controller/
+│   │   └── TelemetryController.java
+│   ├── service/
+│   │   └── UdpServerService.java
+│   ├── model/packet/
+│   │   ├── PacketType.java
+│   │   ├── TelemetryPacket.java
+│   │   ├── RaceDataPacket.java
+│   │   ├── TimingsPacket.java
+│   │   ├── GameStatePacket.java
+│   │   └── PacketParser.java
+│   └── repository/
+└── src/test/
+    └── java/.../model/packet/
+        └── PacketParserTest.java
+
+frontend/
+├── src/app/
+│   ├── services/
+│   │   ├── telemetry.service.ts
+│   │   ├── websocket.service.ts
+│   │   ├── config.service.ts
+│   │   └── notification.service.ts
+│   └── models/
+│       └── telemetry.models.ts
+└── ...
 ```
 
 ## UDP Protocol

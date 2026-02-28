@@ -95,6 +95,9 @@ public class TelemetryController {
         Map<String, Object> response = new HashMap<>();
         response.put("serverRunning", udpServerService.isServerRunning());
         response.put("listeningPort", udpServerService.getListeningPort());
+        response.put("packetsReceived", udpServerService.getPacketsReceived());
+        response.put("packetsProcessed", udpServerService.getPacketsProcessed());
+        response.put("packetsPerSecond", udpServerService.getPacketsPerSecond());
         response.put("timestamp", LocalDateTime.now());
         
         if (udpServerService.isServerRunning()) {

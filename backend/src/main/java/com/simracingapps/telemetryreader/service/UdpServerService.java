@@ -2,7 +2,10 @@ package com.simracingapps.telemetryreader.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simracingapps.telemetryreader.config.TelemetryProperties;
+import com.simracingapps.telemetryreader.model.packet.PacketParser;
+import com.simracingapps.telemetryreader.model.packet.TelemetryPacket;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -14,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * UDP Server service for receiving telemetry data from racing simulators.
@@ -25,17 +29,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UdpServerService {
 
     private final TelemetryProperties telemetryProperties;
+<<<<<<< HEAD
     private final TelemetryWebSocketHandler webSocketHandler;
     private final ObjectMapper objectMapper;
+=======
+    private final ApplicationEventPublisher eventPublisher;
+>>>>>>> be
     private final ExecutorService executorService;
     private DatagramSocket serverSocket;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final AtomicLong packetsReceived = new AtomicLong(0);
+    private final AtomicLong packetsProcessed = new AtomicLong(0);
+    private final AtomicLong lastProcessedCount = new AtomicLong(0);
+    private long lastPpsUpdate = System.currentTimeMillis();
 
+<<<<<<< HEAD
     public UdpServerService(TelemetryProperties telemetryProperties, 
                            TelemetryWebSocketHandler webSocketHandler) {
         this.telemetryProperties = telemetryProperties;
         this.webSocketHandler = webSocketHandler;
         this.objectMapper = new ObjectMapper();
+=======
+    public UdpServerService(TelemetryProperties telemetryProperties, ApplicationEventPublisher eventPublisher) {
+        this.telemetryProperties = telemetryProperties;
+        this.eventPublisher = eventPublisher;
+>>>>>>> be
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "udp-server-thread");
             thread.setDaemon(true);
@@ -95,6 +113,7 @@ public class UdpServerService {
     private void processPacket(DatagramPacket packet) {
         try {
             int packetLength = packet.getLength();
+<<<<<<< HEAD
             String senderAddress = packet.getAddress().getHostAddress();
             int senderPort = packet.getPort();
             
@@ -139,6 +158,28 @@ public class UdpServerService {
             
             log.info("UDP Packet Processed - Type: {}, Size: {} bytes", packetType, packetLength);
             
+=======
+            packetsReceived.incrementAndGet();
+
+            Object parsedData = PacketParser.parse(packet.getData(), packetLength);
+
+            if (parsedData != null) {
+                packetsProcessed.incrementAndGet();
+
+                if (parsedData instanceof TelemetryPacket telemetryPacket) {
+                    eventPublisher.publishEvent(telemetryPacket);
+                }
+
+                long now = System.currentTimeMillis();
+                if (now - lastPpsUpdate > 1000) {
+                    long pps = packetsProcessed.get() - lastProcessedCount.get();
+                    log.info("UDP: {} packets/sec, {} total processed", pps, packetsProcessed.get());
+                    lastProcessedCount.set(packetsProcessed.get());
+                    lastPpsUpdate = now;
+                }
+            }
+
+>>>>>>> be
         } catch (Exception e) {
             log.error("Error processing UDP packet", e);
         }
@@ -176,5 +217,21 @@ public class UdpServerService {
      */
     public int getListeningPort() {
         return serverSocket != null ? serverSocket.getLocalPort() : -1;
+    }
+
+    public long getPacketsReceived() {
+        return packetsReceived.get();
+    }
+
+    public long getPacketsProcessed() {
+        return packetsProcessed.get();
+    }
+
+    public long getPacketsPerSecond() {
+        long now = System.currentTimeMillis();
+        if (now - lastPpsUpdate > 2000) {
+            return 0;
+        }
+        return packetsProcessed.get() - lastProcessedCount.get();
     }
 }
