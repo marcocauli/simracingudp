@@ -12,8 +12,8 @@
 - **Health Check**: Endpoint /health funzionante
 - **Real-time Ready**: WebSocket service implementato e pronto
 
-### ❌ **Componenti UI Mancanti (10%)**
-- **Template Default**: App usa ancora template Angular di benvenuto
+### ❌ **Componenti UI Mancanti (90%)**
+- **Template Default**: App usa ancora template Angular di benvenuto (da sostituire)
 - **Nessun Componente Dashboard**: Assenti gauges, grafici, visualizzazioni
 - **Routing Vuoto**: Nessuna rotta definita in app-routing-module.ts
 - **No Real-time UI**: Manca integrazione WebSocket con UI
@@ -26,16 +26,70 @@
 
 ---
 
-## 🎯 **Obiettivi Principali**
+### Dipendenze
+- **NGX-Charts**: Già in package.json
+- **Angular Material**: Già installato
+- **@angular/cdk**: Già disponibile
 
-### 1. **Dashboard Telemetria Real-time**
-Creare un'interfaccia professionale per visualizzare dati racing in tempo reale
+---
 
-### 2. **Componenti Modulari**
-Sviluppare componenti riutilizzabili per diversi tipi di visualizzazione
+### Task 1: Setup Structure (30 min)
+- [ ] Creare directory `src/app/components/`
+- [ ] Setup routing con `/dashboard` come default route
+- [ ] Aggiornare app.html per usare router-outlet
 
-### 3. **Integrazione Backend**
-Connettere frontend al backend Spring Boot via REST e WebSocket
+### Task 2: Layout Base Dashboard (1h)
+- [ ] Grid CSS responsive 3 colonne
+- [ ] Header con logo, status, connection indicator
+- [ ] Status bar footer con packets/sec, session info
+- [ ] Dark theme racing
+
+### Task 3: Gauge Components (2h)
+- [ ] **Speed Gauge**: SVG analogico + digitale, range 0-350 km/h, colori dinamici
+- [ ] **RPM Meter**: Barra orizzontale, 0-8000 RPM, gear indicator, redline
+- [ ] **Throttle/Brake Bars**: Barre verticali, verde throttle, rosso brake, 0-100%
+- [ ] **Steering Indicator**: Arco/rettangolo, -45° a +45°, center line
+
+### Task 4: Charts (1h)
+- [ ] **Speed Time Series**: NGX-Charts line chart, ultimi 60 secondi
+- [ ] **Tire Temps**: Visualizzazione 4 pneumatici, colori temperature
+
+### Task 5: Integrazione WebSocket (1h)
+- [ ] WebSocket connection in dashboard component
+- [ ] Real-time data binding ai componenti
+- [ ] Animazioni smooth per cambiamenti valori
+- [ ] Auto-reconnect logic
+- [ ] Connection status indicator
+
+### Task 6: Refinement (30 min)
+- [ ] Responsive mobile
+- [ ] Loading states
+- [ ] Error handling
+- [ ] Test end-to-end
+
+---
+
+### ⏱️ Timeline Totale: ~6 ore
+
+### Definition of Done
+
+#### Dashboard Component
+- [ ] Template Angular default sostituito con dashboard racing
+- [ ] Layout grid responsivo funzionante
+- [ ] WebSocket connessione attiva
+- [ ] Dati real-time visualizzati correttamente
+- [ ] Dark theme applicato
+
+#### Gauge Components
+- [ ] Accettano TelemetryData come input
+- [ ] Animazioni smooth (<16ms per update)
+- [ ] Theming support (dark theme)
+- [ ] Responsive su mobile
+
+#### Charts
+- [ ] NGX-Charts integration funzionante
+- [ ] Dati aggiornati in real-time
+- [ ] Performance ottimizzata per 60Hz
 
 ---
 
@@ -129,177 +183,103 @@ const routes: Routes = [
 
 ---
 
-## 📋 **Fase 4: Gestione Sessioni**
+## 📋 **Checklist Implementazione Dashboard**
 
-### 4.1 **Session List Component**
-- **Grid Layout**: Angular Material Table
-- **Columns**: Data, Durata, Track, Auto, Best Lap
-- **Filters**: Per data, track, tipo sessione
-- **Actions**: View details, export data, delete
+### ✅ **Completati**
+- [x] Infrastruttura Angular 17 standalone
+- [x] WebSocketService implementato
+- [x] TelemetryData model definito
+- [x] Docker deployment funzionante
 
-### 4.2 **Session Details Component**
-- **Header Info**: Track, auto, weather, duration
-- **Lap Analysis**: Lista giri con tempi settori
-- **Telemetry**: Export options per dati dettagliati
-- **Comparison**: Side-by-side lap comparison
+### 📋 **Todo - Dashboard Completa**
 
-### 4.3 **Session Controls Component**
-- **Start/Stop**: Bottoni per controllo sessione UDP
-- **Mock Mode**: Toggle per dati simulati vs reali
-- **Connection Status**: Indicatore stato WebSocket
-- **Data Rate**: Packets per second display
+#### Task 1: Setup Structure
+- [ ] Creare directory `src/app/components/`
+- [ ] Creare directory `dashboard/`, `gauges/`, `charts/`, `layout/`
+- [ ] Setup routing con `/dashboard` default
+- [ ] Aggiornare app.html per router-outlet
 
----
+#### Task 2: Layout Base Dashboard
+- [ ] Creare dashboard.component.ts/html/scss
+- [ ] Implementare grid CSS responsive 3 colonne
+- [ ] Creare header component con status
+- [ ] Creare status-bar component
+- [ ] Applicare dark theme racing
 
-## 📋 **Fase 5: Integrazione Backend & WebSocket**
+#### Task 3: Gauge Components
+- [ ] **Speed Gauge**: SVG analogico + digitale, 0-350 km/h, colori dinamici
+- [ ] **RPM Meter**: Barra orizzontale, 0-8000 RPM, gear indicator, redline
+- [ ] **Throttle/Brake**: Barre verticali, verde/rosso, 0-100%
+- [ ] **Steering**: Arco -45°/+45°, center line
 
-### 5.1 **WebSocket Integration**
-```typescript
-// In DashboardComponent
-ngOnInit() {
-  this.websocketService.connect('ws://localhost:8080/ws/telemetry');
-  this.telemetrySubscription = this.websocketService
-    .getTelemetryData()
-    .subscribe(data => {
-      this.updateDashboard(data);
-    });
-}
-```
+#### Task 4: Charts
+- [ ] **Speed Time Series**: NGX-Charts line, ultimi 60s
+- [ ] **Tire Temps**: 4 pneumatici, colori temperature
 
-### 5.2 **Connection Management**
-- **Auto-reconnect**: Configurable retry logic
-- **Status Indicator**: Visual feedback connessione
-- **Fallback**: Mock data mode quando backend offline
-- **Error Handling**: Graceful degradation per disconnessioni
+#### Task 5: Integrazione WebSocket
+- [ ] Connettere WebSocket in dashboard
+- [ ] Binding dati real-time ai componenti
+- [ ] Animazioni smooth per update
+- [ ] Auto-reconnect logic
+- [ ] Connection status indicator
 
-### 5.3 **Data Processing**
-- **Buffering**: Gestione pacchetti 60Hz
-- **Validation**: Range checking per valori anomali
-- **Smoothing**: Moving average per dati rumorosi
-- **History**: Rolling buffer per chart data
+#### Task 6: Refinement
+- [ ] Responsive mobile
+- [ ] Loading states
+- [ ] Error handling
+- [ ] Test end-to-end
 
 ---
 
-## 📋 **Fase 6: UX & Responsive Design**
+## ⏱️ **Timeline Totale**: ~6 ore
 
-### 6.1 **Layout Responsive**
-- **Desktop**: Full dashboard con tutti i componenti
-- **Tablet**: Layout adattato con componenti principali
-- **Mobile**: Simplified view con dati essenziali
+### Fase 1: Foundation
+- [ ] Component structure setup ─ 30 min
+- [ ] Basic dashboard layout ─ 1h
+- [ ] WebSocket connection ─ 30 min
 
-### 6.2 **Dark/Light Theme**
-- **Angular Material**: Theme system integration
-- **Toggle**: User preference persistence
-- **Auto-switch**: System preference detection
-- **Racing Theme**: Custom dark theme per night racing
+### Fase 2: Core Components  
+- [ ] Speed gauge + RPM meter ─ 1h
+- [ ] Throttle/brake + steering ─ 1h
 
-### 6.3 **Accessibility**
-- **Keyboard Navigation**: Full keyboard support
-- **Screen Reader**: ARIA labels e annunci
-- **Color Contrast**: WCAG AA compliance
-- **Focus Management**: Logical tab order
+### Fase 3: Charts & Advanced
+- [ ] NGX-Charts integration ─ 30 min
+- [ ] Dark theme support ─ 30 min
 
----
-
-## 📋 **Fase 7: Performance & Ottimizzazione**
-
-### 7.1 **Rendering Optimization**
-- **OnPush Change Detection**: Per tutti i componenti
-- **TrackBy Functions**: Per *ngFor optimization
-- **Virtual Scrolling**: Per liste sessioni lunghe
-- **Debouncing**: Per update rate management
-
-### 7.2 **Memory Management**
-- **Unsubscribe Lifecycle**: OnDestroy cleanup
-- **Data Buffer Limits**: Rotating buffers fixed size
-- **Chart Data Pruning**: Limit punti visualizzati
-- **Component Reuse**: Pool pattern per oggetti costosi
-
-### 7.3 **Network Optimization**
-- **WebSocket Binary**: Consider binary protocol
-- **Compression**: Gzip WebSocket messages
-- **Batch Updates**: Group multiple telemetry updates
-- **Local Caching**: Service Worker per asset statici
+### Fase 4: Polish
+- [ ] Responsive mobile ─ 15 min
+- [ ] Testing ─ 15 min
 
 ---
 
-## 🛠️ **Stack Tecnologico**
+## 🎯 **Definition of Done**
 
-### **Core**
-- Angular 17 Standalone Components
-- TypeScript 5.9+ con strict mode
-- RxJS 7 per reactive programming
-- Angular Material 21 per UI components
+### Dashboard Component
+- [ ] Template Angular default sostituito con dashboard racing
+- [ ] Layout grid responsivo funzionante
+- [ ] WebSocket connessione attiva
+- [ ] Dati real-time visualizzati correttamente
+- [ ] Dark theme applicato
 
-### **Charts & Visualization**
-- NGX-Charts (già in dependencies)
-- D3.js per visualizzazioni custom
-- Canvas API per high-performance gauges
-- Web Workers per data processing pesante
+### Gauge Components
+- [ ] Accettano TelemetryData come input
+- [ ] Animazioni smooth (<16ms per update)
+- [ ] Theming support (dark theme)
+- [ ] Responsive su mobile
 
-### **Development Tools**
-- ESLint + Prettier per code quality
-- Jest + Angular Testing Library per unit test
-- Storybook per component documentation
-- Chrome DevTools per performance profiling
-
----
-
-## ⏱️ **Timeline Stimata**
-
-### **Sprint 1: Foundation (Week 1-2)**
-- [x] Infrastruttura base (già completa)
-- [ ] Component structure setup
-- [ ] Basic dashboard layout
-- [ ] WebSocket connection
-
-### **Sprint 2: Core Components (Week 3-4)**
-- [ ] Speed gauge + RPM meter
-- [ ] Throttle/brake + steering
-- [ ] Basic data integration
-- [ ] Responsive layout
-
-### **Sprint 3: Advanced Features (Week 5-6)**
-- [ ] NGX-Charts integration
-- [ ] Session management
-- [ ] Dark theme support
-- [ ] Performance optimization
-
-### **Sprint 4: Polish & Testing (Week 7-8)**
-- [ ] Unit tests coverage
-- [ ] E2E testing
-- [ ] Accessibility audit
-- [ ] Production deployment
-
----
-
-## 🎯 **Definition of Done per Componente**
-
-### **Dashboard Component**
-- [x] Mostra tutti i gauges principali
-- [ ] Aggiornamento real-time via WebSocket
-- [ ] Responsive design funzionante
-- [ ] Fallback a mock data quando backend offline
-- [ ] Loading states ed error handling
-- [ ] Unit tests con >80% coverage
-
-### **Gauge Components**
-- [ ] Accetta dati TelemetryData come input
-- [ ] Smooth animations per cambiamenti valore
-- [ ] Accessibile con keyboard e screen reader
-- [ ] Theming support (light/dark)
-- [ ] Performance <16ms per update
-- [ ] Documentation con Storybook stories
+### Charts
+- [ ] NGX-Charts integration funzionante
+- [ ] Dati aggiornati in real-time
+- [ ] Performance ottimizzata per 60Hz
 
 ---
 
 ## 🚀 **Prossimi Passi Immediati**
 
-1. **Setup Component Structure**: Creare directory components/base
+1. **Setup Component Structure**: Creare directory components/
 2. **Dashboard Component**: Sostituire template Angular con dashboard base
 3. **Speed Gauge**: Primo componente funzionale
 4. **WebSocket Integration**: Collegare dati reali ai componenti
-5. **Testing Setup**: Configurare Jest + Testing Library
 
 ---
 

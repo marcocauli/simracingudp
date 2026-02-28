@@ -354,6 +354,7 @@ show_usage() {
     echo -e "${PURPLE}Commands:${NC}"
     echo -e "  ${GREEN}start${NC}         Build all sources externally and start services (Docker)"
     echo -e "  ${GREEN}dev${NC}           Start development mode (hot reload with local tools)"
+    echo -e "  ${GREEN}fast${NC}          Restart containers only (no rebuild, ~15 sec)"
     echo -e "  ${GREEN}stop${NC}          Stop all services"
     echo -e "  ${GREEN}restart${NC}       Rebuild and restart all services"
     echo -e "  ${GREEN}reset${NC}        Complete cleanup: stop, remove containers and images"
@@ -364,10 +365,10 @@ show_usage() {
     echo -e "  ${GREEN}logs${NC}         Show logs from running services"
     echo -e "  ${GREEN}status${NC}       Show current service status"
     echo ""
-    echo -e "${YELLOW}Workflow:${NC}"
-    echo -e "  1. ${CYAN}$0 start${NC}         # Builds sources externally + Docker containers"
-    echo -e "  2. ${CYAN}$0 dev${NC}           # Local development with hot reload"
-    echo -e "  3. ${CYAN}$0 restart${NC}       # Full rebuild and restart"
+    echo -e "${YELLOW}Quick Reference:${NC}"
+    echo -e "  ${CYAN}$0 fast${NC}        # Fast restart (15 sec) - per test rapidi"
+    echo -e "  ${CYAN}$0 dev${NC}         # Sviluppo con hot reload"
+    echo -e "  ${CYAN}$0 start${NC}       # Primo avvio o dopo modifiche strutturali"
     echo ""
 }
 
@@ -430,6 +431,14 @@ case "${1:-help}" in
         ;;
     "dev"|"development")
         start_development
+        ;;
+    "fast")
+        print_message $CYAN "⚡ Fast restart (no rebuild)..."
+        cd "$SCRIPT_DIR"
+        docker compose restart
+        wait_for_services
+        show_status
+        print_message $GREEN "✅ Fast restart complete (~15 sec)"
         ;;
     "stop")
         check_docker

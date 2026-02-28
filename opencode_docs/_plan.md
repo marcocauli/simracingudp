@@ -155,6 +155,26 @@ Storage e analisi dati sessioni complete
 
 ---
 
+## 🚀 **Development Workflow**
+
+### Comandi Stack
+
+| Comando | Tempo | Uso |
+|---------|-------|-----|
+| `./reset-stack.sh start` | ~3-5 min | Primo avvio o dopo modifiche strutturali |
+| `./reset-stack.sh dev` | ~10 sec | Sviluppo quotidiano con hot reload |
+| `./reset-stack.sh fast` | ~15 sec | Restart veloce (no rebuild) |
+| `./reset-stack.sh stop` | - | Ferma tutti i servizi |
+| `./reset-stack.sh restart` | ~3-5 min | Rebuild completo |
+
+### Workflow Consigliato
+
+1. **Sviluppo quotidiano**: `./reset-stack.sh dev` - hot reload su entrambi i backend
+2. **Test rapidi**: `./reset-stack.sh fast` - restart container senza rebuild
+3. **Dopo modifiche strutturali**: `./reset-stack.sh start` - rebuild completo
+
+---
+
 ## 🚀 **Next Steps**
 
 ### **Immediate (Week 1-2)**

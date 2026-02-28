@@ -1,19 +1,16 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideHttpClient } from '@angular/common/http';
-import { importProvidersFrom } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppComponent } from './app/app';
-import { AppRoutingModule } from './app/app-routing-module';
+import { routes } from './app/app-routing-module';
 import { ErrorInterceptor } from './app/interceptors/error.interceptor';
-
-// Import Feature Modules
-import { CommonModule } from '@angular/common';
-const featureModules = [CommonModule];
 
 bootstrapApplication(AppComponent, {
   providers: [
+    provideRouter(routes),
     provideHttpClient(),
     {
       provide: HTTP_INTERCEPTORS,
@@ -21,7 +18,6 @@ bootstrapApplication(AppComponent, {
       multi: true
     },
     ReactiveFormsModule,
-    importProvidersFrom(featureModules),
     {
       provide: 'ENVIRONMENT',
       useValue: 'development'

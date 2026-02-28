@@ -1,6 +1,76 @@
 # Racing Telemetry Reader
 
-A Spring Boot application for receiving, processing, and managing UDP telemetry data from racing simulators like Automobilista 2 and Project CARS.
+A comprehensive racing telemetry management system with Spring Boot backend and Angular frontend for receiving, processing, and visualizing real-time UDP data from racing simulators.
+
+## Quick Start
+
+### Prerequisites
+- Docker + Docker Compose
+- Java 21 (for local development)
+- Node.js 20+ (for local development)
+
+### Avvio Veloce
+
+```bash
+# Primo avvio - build + start
+./reset-stack.sh start
+
+# Sviluppo con hot reload (consigliato)
+./reset-stack.sh dev
+
+# Fast restart (dopo modifiche al codice)
+./reset-stack.sh fast
+```
+
+### Servizi
+
+| Servizio | URL | Descrizione |
+|----------|-----|-------------|
+| Frontend | http://localhost:4200 | Dashboard Angular |
+| Backend API | http://localhost:8080 | REST API Spring Boot |
+| Mock Server | UDP:5606 | Simulator UDP data |
+
+---
+
+## Comandi Stack
+
+| Comando | Tempo | Uso |
+|---------|-------|-----|
+| `./reset-stack.sh start` | ~3-5 min | Primo avvio o dopo modifiche strutturali |
+| `./reset-stack.sh dev` | ~10 sec | Sviluppo quotidiano con hot reload |
+| `./reset-stack.sh fast` | ~15 sec | Restart veloce (no rebuild) |
+| `./reset-stack.sh stop` | - | Ferma tutti i servizi |
+| `./reset-stack.sh restart` | ~3-5 min | Rebuild completo |
+| `./reset-stack.sh reset` | - | Rimuove tutto (clean slate) |
+| `./reset-stack.sh logs` | - | Mostra i log |
+
+---
+
+## Development Workflow Consigliato
+
+### Sviluppo Backend/Frontend
+```bash
+./reset-stack.sh dev
+# Hot reload attivo su:
+# - Backend: http://localhost:8080
+# - Frontend: http://localhost:4200
+```
+
+### Test Rapidi (dopo modifiche al codice)
+```bash
+# Solo restart container (usa immagini già buildate)
+./reset-stack.sh fast
+```
+
+### Modifiche a Dockerfile o dipendenze
+```bash
+# Rebuild completo
+./reset-stack.sh start
+# oppure
+./reset-stack.sh restart
+```
+
+---
 
 ## Features
 
@@ -16,33 +86,25 @@ A Spring Boot application for receiving, processing, and managing UDP telemetry 
 - Project CARS 1
 - Project CARS 2
 
+---
+
 ## Technology Stack
 
-- **Backend**: Spring Boot 3.2.0, Java 21
-- **Web**: Spring WebFlux (reactive)
+### Backend
+- **Framework**: Spring Boot 3.2.0, Java 21
+- **Web**: Spring Web + WebSocket
 - **Database**: H2 (dev), PostgreSQL (prod)
-- **WebSocket**: Spring WebSocket
-- **Build Tool**: Maven
+- **Build**: Maven
 
-## Quick Start
+### Frontend
+- **Framework**: Angular 17 (Standalone)
+- **Charts**: NGX-Charts
+- **UI**: Angular Material + SCSS
+- **Build**: Angular CLI
 
-### Prerequisites
-
-- Java 21
-- Maven 3.6+
-- Racing simulator with UDP output enabled
-
-### Running the Application
-
-1. Clone the repository
-2. Navigate to project directory
-3. Run the application:
-
-```bash
-mvn spring-boot:run
-```
-
-The application will start on `http://localhost:8080`
+### Infrastructure
+- **Container**: Docker + Docker Compose
+- **Mock Server**: Node.js (simulatore dati UDP)
 
 ### API Endpoints
 
