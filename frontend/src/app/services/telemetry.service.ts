@@ -29,8 +29,8 @@ export interface ServerStatus {
   providedIn: 'root'
 })
 export class TelemetryService {
-  private readonly BACKEND_URL = 'http://localhost:8080';
-  private readonly WS_URL = 'ws://localhost:8080/ws/telemetry';
+  private readonly BACKEND_URL = 'http://localhost:18888/api';
+  private readonly WS_URL = 'ws://localhost:18888/api/ws/telemetry';
 
   constructor(private http: HttpClient) {}
 

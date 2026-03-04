@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
 
 export interface TelemetryData {
   packetType: number;
@@ -34,7 +34,7 @@ export interface TelemetryData {
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private telemetrySubject = new Subject<TelemetryData>();
-  private connectionStatusSubject = new Subject<string>();
+  private connectionStatusSubject = new BehaviorSubject<string>('DISCONNECTED');
 
   constructor() {}
 
@@ -43,8 +43,9 @@ export class WebSocketService {
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected to:', url);
+        console.log('WebSocket onopen fired, URL:', url);
         this.connectionStatusSubject.next('CONNECTED');
+        console.log('Connection status set to CONNECTED');
       };
       
       this.ws.onmessage = (event) => {

@@ -11,92 +11,202 @@
   </header>
 
   <main class="content">
-    <div class="telemetry-grid">
-      <!-- Speed Display -->
-      <div class="telemetry-card speed-card">
-        <div class="card-header">Speed</div>
-        <div class="speed-display">
-          <span class="speed-value">{{ formatSpeed(speed) }}</span>
-          <span class="speed-unit">km/h</span>
-        </div>
-      </div>
-
-      <!-- RPM Display -->
-      <div class="telemetry-card rpm-card">
-        <div class="card-header">RPM</div>
-        <div class="rpm-display">
-          <div class="rpm-bar-container">
-            <div class="rpm-bar" [style.width.%]="(rpm / 8000) * 100"></div>
-            <div class="rpm-redline"></div>
-          </div>
-          <span class="rpm-value">{{ formatRpm(rpm) }}</span>
-        </div>
-      </div>
-
-      <!-- Gear Display -->
-      <div class="telemetry-card gear-card">
-        <div class="card-header">Gear</div>
-        <div class="gear-display">
-          <span class="gear-value">{{ gear }}</span>
-        </div>
-      </div>
-
-      <!-- Throttle/Brake -->
-      <div class="telemetry-card pedal-card">
-        <div class="card-header">Throttle / Brake</div>
-        <div class="pedal-display">
-          <div class="pedal throttle">
-            <div class="pedal-bar" [style.height.%]="throttle"></div>
-            <span class="pedal-label">T</span>
-            <span class="pedal-value">{{ throttle | number:'1.0-0' }}%</span>
-          </div>
-          <div class="pedal brake">
-            <div class="pedal-bar" [style.height.%]="brake"></div>
-            <span class="pedal-label">B</span>
-            <span class="pedal-value">{{ brake | number:'1.0-0' }}%</span>
+    <div class="telemetry-grid" 
+         cdkDropList 
+         cdkDropListOrientation="mixed"
+         (cdkDropListDropped)="drop($event)">
+      <ng-container *ngFor="let card of cards" [ngSwitch]="card.type">
+        <!-- Speed -->
+        <div class="telemetry-card speed-card" cdkDrag *ngSwitchCase="'speed'" [ngClass]="card.id">
+          <div class="card-header">Speed</div>
+          <div class="speed-display">
+            <span class="speed-value">{{ formatSpeed(speed) }}</span>
+            <span class="speed-unit">km/h</span>
           </div>
         </div>
-      </div>
 
-      <!-- Steering -->
-      <div class="telemetry-card steering-card">
-        <div class="card-header">Steering</div>
-        <div class="steering-display">
-          <div class="steering-bar">
-            <div class="steering-indicator" [style.left.%]="50 + (steering * 40)"></div>
+        <!-- RPM -->
+        <div class="telemetry-card rpm-card" cdkDrag *ngSwitchCase="'rpm'" [ngClass]="card.id">
+          <div class="card-header">RPM</div>
+          <div class="rpm-display">
+            <div class="rpm-bar-container">
+              <div class="rpm-bar" [style.width.%]="(rpm / 8000) * 100"></div>
+              <div class="rpm-redline"></div>
+            </div>
+            <span class="rpm-value">{{ formatRpm(rpm) }}</span>
           </div>
-          <span class="steering-value">{{ steering | number:'1.1-1' }}°</span>
+        </div>
+
+        <!-- Gear -->
+        <div class="telemetry-card gear-card" cdkDrag *ngSwitchCase="'gear'" [ngClass]="card.id">
+          <div class="card-header">Gear</div>
+          <div class="gear-display">
+            <span class="gear-value">{{ gear }}</span>
+          </div>
+        </div>
+
+        <!-- Throttle/Brake -->
+        <div class="telemetry-card pedal-card" cdkDrag *ngSwitchCase="'throttle-brake'" [ngClass]="card.id">
+          <div class="card-header">Throttle / Brake</div>
+          <div class="pedal-gauges">
+            <div class="pedal-gauge throttle">
+              <svg viewBox="0 0 100 100">
+                <circle class="gauge-bg" cx="50" cy="50" r="45"/>
+                <circle class="gauge-progress" cx="50" cy="50" r="45"
+                        [style.strokeDashoffset]="getCircleOffset(throttle)"/>
+              </svg>
+              <div class="gauge-value">{{ throttle | number:'1.0-0' }}%</div>
+              <div class="gauge-label">THROTTLE</div>
+            </div>
+            <div class="pedal-gauge brake">
+              <svg viewBox="0 0 100 100">
+                <circle class="gauge-bg" cx="50" cy="50" r="45"/>
+                <circle class="gauge-progress" cx="50" cy="50" r="45"
+                        [style.strokeDashoffset]="getCircleOffset(brake)"/>
+              </svg>
+              <div class="gauge-value">{{ brake | number:'1.0-0' }}%</div>
+              <div class="gauge-label">BRAKE</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steering -->
+        <div class="telemetry-card steering-card" cdkDrag *ngSwitchCase="'steering'" [ngClass]="card.id">
+          <div class="card-header">Steering</div>
+          <div class="steering-gauge">
+            <svg viewBox="0 0 200 120">
+              <defs>
+                <linearGradient id="steeringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#ff4444"/>
+                  <stop offset="45%" style="stop-color:#ff4444"/>
+                  <stop offset="50%" style="stop-color:#4a4aff"/>
+                  <stop offset="55%" style="stop-color:#00ff88"/>
+                  <stop offset="100%" style="stop-color:#00ff88"/>
+                </linearGradient>
+              </defs>
+              <path class="steering-arc" d="M 20 100 A 80 80 0 0 1 180 100" 
+                    fill="none" stroke="url(#steeringGradient)" stroke-width="12" stroke-linecap="round"/>
+              <text x="30" y="95" class="steering-label">-90°</text>
+              <text x="170" y="95" class="steering-label">+90°</text>
+              <text x="100" y="85" class="steering-center-label">0°</text>
+              <g [style.transform]="'rotate(' + steering + 'deg)'" style="transform-origin: 100px 100px;">
+                <line class="steering-indicator" x1="100" y1="30" x2="100" y2="55" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+                <circle class="steering-center" cx="100" cy="100" r="8" fill="#fff"/>
+              </g>
+            </svg>
+            <div class="steering-value">{{ steering | number:'1.0-0' }}°</div>
+          </div>
+        </div>
+
+        <!-- Fuel -->
+        <div class="telemetry-card fuel-card" cdkDrag *ngSwitchCase="'fuel'" [ngClass]="card.id">
+          <div class="card-header">Fuel</div>
+          <div class="fuel-display">
+            <div class="fuel-bar-container">
+              <div class="fuel-bar" [style.width.%]="fuelLevel" [class.low]="fuelLevel < 20"></div>
+            </div>
+            <span class="fuel-value">{{ fuelLevel | number:'1.1-1' }}%</span>
+          </div>
+        </div>
+
+        <!-- Tire Wear -->
+        <div class="telemetry-card tire-wear-card" cdkDrag *ngSwitchCase="'tire-wear'" [ngClass]="card.id">
+          <div class="card-header">Tire Wear</div>
+          <div class="tire-grid">
+            <div class="tire-item front">
+              <div class="tire-bar-container">
+                <div class="tire-bar" [style.height.%]="tireWear[0]" [style.background]="getTireWearColor(tireWear[0])"></div>
+              </div>
+              <span class="tire-value">{{ tireWear[0] | number:'1.0-0' }}%</span>
+              <span class="tire-label">FL</span>
+            </div>
+            <div class="tire-item front">
+              <div class="tire-bar-container">
+                <div class="tire-bar" [style.height.%]="tireWear[1]" [style.background]="getTireWearColor(tireWear[1])"></div>
+              </div>
+              <span class="tire-value">{{ tireWear[1] | number:'1.0-0' }}%</span>
+              <span class="tire-label">FR</span>
+            </div>
+            <div class="tire-item rear">
+              <div class="tire-bar-container">
+                <div class="tire-bar" [style.height.%]="tireWear[2]" [style.background]="getTireWearColor(tireWear[2])"></div>
+              </div>
+              <span class="tire-value">{{ tireWear[2] | number:'1.0-0' }}%</span>
+              <span class="tire-label">RL</span>
+            </div>
+            <div class="tire-item rear">
+              <div class="tire-bar-container">
+                <div class="tire-bar" [style.height.%]="tireWear[3]" [style.background]="getTireWearColor(tireWear[3])"></div>
+              </div>
+              <span class="tire-value">{{ tireWear[3] | number:'1.0-0' }}%</span>
+              <span class="tire-label">RR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tire Temps -->
+        <div class="telemetry-card tire-temps-card" cdkDrag *ngSwitchCase="'tire-temps'" [ngClass]="card.id">
+          <div class="card-header">Tire Temps</div>
+          <div class="tire-grid">
+            <div class="tire-item front">
+              <div class="tire-temp-circle" [style.borderColor]="getTireTempColor(tireTemps[0])" [style.background]="getTireTempColor(tireTemps[0]) + '20'">
+                <span [style.color]="getTireTempColor(tireTemps[0])">{{ tireTemps[0] | number:'1.0-0' }}°</span>
+              </div>
+              <span class="tire-label">FL</span>
+            </div>
+            <div class="tire-item front">
+              <div class="tire-temp-circle" [style.borderColor]="getTireTempColor(tireTemps[1])" [style.background]="getTireTempColor(tireTemps[1]) + '20'">
+                <span [style.color]="getTireTempColor(tireTemps[1])">{{ tireTemps[1] | number:'1.0-0' }}°</span>
+              </div>
+              <span class="tire-label">FR</span>
+            </div>
+            <div class="tire-item rear">
+              <div class="tire-temp-circle" [style.borderColor]="getTireTempColor(tireTemps[2])" [style.background]="getTireTempColor(tireTemps[2]) + '20'">
+                <span [style.color]="getTireTempColor(tireTemps[2])">{{ tireTemps[2] | number:'1.0-0' }}°</span>
+              </div>
+              <span class="tire-label">RL</span>
+            </div>
+            <div class="tire-item rear">
+              <div class="tire-temp-circle" [style.borderColor]="getTireTempColor(tireTemps[3])" [style.background]="getTireTempColor(tireTemps[3]) + '20'">
+                <span [style.color]="getTireTempColor(tireTemps[3])">{{ tireTemps[3] | number:'1.0-0' }}°</span>
+              </div>
+              <span class="tire-label">RR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lap Timing -->
+        <div class="telemetry-card lap-timing-card" cdkDrag *ngSwitchCase="'lap-timing'" [ngClass]="card.id">
+          <app-lap-timing
+            [currentLap]="telemetryData?.currentLap ?? 0"
+            [currentSector]="telemetryData?.currentSector ?? 1"
+            [currentSector1Time]="telemetryData?.sector1Time ?? 0"
+            [currentSector2Time]="telemetryData?.sector2Time ?? 0"
+            [currentSector3Time]="telemetryData?.sector3Time ?? 0"
+            [lastLapTime]="telemetryData?.lastLapTime ?? 0"
+            [lastSector1Time]="telemetryData?.lastSector1Time ?? 0"
+            [lastSector2Time]="telemetryData?.lastSector2Time ?? 0"
+            [lastSector3Time]="telemetryData?.lastSector3Time ?? 0"
+            [bestLapTime]="telemetryData?.bestLapTime ?? 0"
+            [bestSector1Time]="telemetryData?.bestSector1Time ?? 0"
+            [bestSector2Time]="telemetryData?.bestSector2Time ?? 0"
+            [bestSector3Time]="telemetryData?.bestSector3Time ?? 0"
+          ></app-lap-timing>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- JSON Logs -->
+    <div class="json-logs-container">
+      <div class="json-logs-header" (click)="toggleJson()">
+        <span class="json-logs-title">WebSocket Last Message</span>
+        <div class="header-actions">
+          <span class="json-status" *ngIf="lastJson">{{ isJsonExpanded ? '▼' : '▶' }}</span>
+          <button class="clear-logs-btn" (click)="clearLogs(); $event.stopPropagation()">Clear</button>
         </div>
       </div>
-
-      <!-- Fuel -->
-      <div class="telemetry-card fuel-card">
-        <div class="card-header">Fuel</div>
-        <div class="fuel-display">
-          <div class="fuel-bar-container">
-            <div class="fuel-bar" [style.width.%]="fuelLevel" [class.low]="fuelLevel < 20"></div>
-          </div>
-          <span class="fuel-value">{{ fuelLevel | number:'1.1-1' }}%</span>
-        </div>
-      </div>
-
-      <!-- Lap Timing -->
-      <div class="telemetry-card lap-timing-card">
-        <app-lap-timing
-          [currentLap]="telemetryData?.currentLap ?? 0"
-          [currentSector]="telemetryData?.currentSector ?? 1"
-          [currentSector1Time]="telemetryData?.sector1Time ?? 0"
-          [currentSector2Time]="telemetryData?.sector2Time ?? 0"
-          [currentSector3Time]="telemetryData?.sector3Time ?? 0"
-          [lastLapTime]="telemetryData?.lastLapTime ?? 0"
-          [lastSector1Time]="telemetryData?.lastSector1Time ?? 0"
-          [lastSector2Time]="telemetryData?.lastSector2Time ?? 0"
-          [lastSector3Time]="telemetryData?.lastSector3Time ?? 0"
-          [bestLapTime]="telemetryData?.bestLapTime ?? 0"
-          [bestSector1Time]="telemetryData?.bestSector1Time ?? 0"
-          [bestSector2Time]="telemetryData?.bestSector2Time ?? 0"
-          [bestSector3Time]="telemetryData?.bestSector3Time ?? 0"
-        ></app-lap-timing>
+      <div class="json-logs-content" [class.expanded]="isJsonExpanded">
+        <pre class="json-logs">{{ lastJson }}</pre>
       </div>
     </div>
   </main>

@@ -27,7 +27,7 @@ A comprehensive racing telemetry management system with Spring Boot backend and 
 | Servizio | URL | Descrizione |
 |----------|-----|-------------|
 | Frontend | http://localhost:4200 | Dashboard Angular |
-| Backend API | http://localhost:8080 | REST API Spring Boot |
+| Backend API | http://localhost:18888 | REST API Spring Boot |
 | Mock Server | UDP:5606 | Simulator UDP data |
 
 ---
@@ -52,7 +52,7 @@ A comprehensive racing telemetry management system with Spring Boot backend and 
 ```bash
 ./reset-stack.sh dev
 # Hot reload attivo su:
-# - Backend: http://localhost:8080
+# - Backend: http://localhost:18888
 # - Frontend: http://localhost:4200
 ```
 
@@ -149,7 +149,7 @@ Default UDP settings:
 ### Database
 
 The application uses H2 in-memory database for development.
-H2 console is available at: `http://localhost:8080/api/h2-console`
+H2 console is available at: `http://localhost:18888/api/h2-console`
 
 - JDBC URL: `jdbc:h2:mem:telemetrydb`
 - Username: `sa`

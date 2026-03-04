@@ -17,7 +17,7 @@ export class ConfigService {
     udpPort: 5606,
     updateRate: 60,
     sessionType: 'race',
-    serverHost: 'localhost:8080',
+    serverHost: 'localhost:18888',
     frontendUrl: 'http://localhost:4200'
   };
 
@@ -43,7 +43,7 @@ export class ConfigService {
         udpPort: parseInt(localStorage.getItem('udpPort') || '5606'),
         updateRate: parseInt(localStorage.getItem('updateRate') || '60'),
         sessionType: localStorage.getItem('sessionType') || 'race',
-        serverHost: localStorage.getItem('serverHost') || 'localhost:8080',
+        serverHost: localStorage.getItem('serverHost') || 'localhost:18888',
         frontendUrl: localStorage.getItem('frontendUrl') || 'http://localhost:4200'
       };
       this.configSubject.next({ ...this.defaultConfig, ...envConfig });

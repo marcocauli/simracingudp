@@ -4,7 +4,7 @@
   "description": "Realistic racing telemetry mock server for extended sessions (1m-1h)",
   "main": "mock-server.js",
   "scripts": {
-    "start": "node mock-server.js",
+    "start": "node mock-server.js 2>&1 | tee ../logs/mock-server.log",
     "test": "node test-client.js"
   },
   "keywords": [

@@ -1,6 +1,5 @@
 package com.simracingapps.telemetryreader.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simracingapps.telemetryreader.config.TelemetryProperties;
 import com.simracingapps.telemetryreader.model.packet.PacketParser;
 import com.simracingapps.telemetryreader.model.packet.TelemetryPacket;
@@ -29,12 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class UdpServerService {
 
     private final TelemetryProperties telemetryProperties;
-<<<<<<< HEAD
-    private final TelemetryWebSocketHandler webSocketHandler;
-    private final ObjectMapper objectMapper;
-=======
     private final ApplicationEventPublisher eventPublisher;
->>>>>>> be
     private final ExecutorService executorService;
     private DatagramSocket serverSocket;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -43,17 +37,9 @@ public class UdpServerService {
     private final AtomicLong lastProcessedCount = new AtomicLong(0);
     private long lastPpsUpdate = System.currentTimeMillis();
 
-<<<<<<< HEAD
-    public UdpServerService(TelemetryProperties telemetryProperties, 
-                           TelemetryWebSocketHandler webSocketHandler) {
-        this.telemetryProperties = telemetryProperties;
-        this.webSocketHandler = webSocketHandler;
-        this.objectMapper = new ObjectMapper();
-=======
     public UdpServerService(TelemetryProperties telemetryProperties, ApplicationEventPublisher eventPublisher) {
         this.telemetryProperties = telemetryProperties;
         this.eventPublisher = eventPublisher;
->>>>>>> be
         this.executorService = Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "udp-server-thread");
             thread.setDaemon(true);
@@ -113,53 +99,20 @@ public class UdpServerService {
     private void processPacket(DatagramPacket packet) {
         try {
             int packetLength = packet.getLength();
-<<<<<<< HEAD
-            String senderAddress = packet.getAddress().getHostAddress();
-            int senderPort = packet.getPort();
-            
-            log.debug("Received packet from {}: {} bytes", senderAddress, packetLength);
-            
-            // Parse packet type (first byte after header)
-            byte[] data = packet.getData();
-            int packetType = data[11] & 0xFF; // Packet type is at offset 11
-            
-            // Create telemetry data to send via WebSocket
-            var telemetryData = new java.util.HashMap<String, Object>();
-            telemetryData.put("packetType", packetType);
-            telemetryData.put("timestamp", System.currentTimeMillis());
-            telemetryData.put("speed", 150 + Math.random() * 100);
-            telemetryData.put("rpm", 3000 + Math.random() * 4000);
-            telemetryData.put("gear", (int)(Math.random() * 6) + 1);
-            telemetryData.put("throttle", Math.random() * 100);
-            telemetryData.put("brake", Math.random() * 50);
-            telemetryData.put("steering", (Math.random() - 0.5) * 60);
-            telemetryData.put("fuelLevel", 50 + Math.random() * 50);
-            telemetryData.put("tireWear", new double[]{Math.random() * 30, Math.random() * 30, Math.random() * 30, Math.random() * 30});
-            telemetryData.put("tireTemps", new double[]{70 + Math.random() * 20, 70 + Math.random() * 20, 70 + Math.random() * 20, 70 + Math.random() * 20});
-            
-            // Simulate lap/sector data (will be replaced with real parsing)
-            telemetryData.put("currentLap", 1);
-            telemetryData.put("currentSector", packetType == 1 ? (int)(Math.random() * 3) + 1 : 1);
-            telemetryData.put("sector1Time", 25.0 + Math.random() * 5);
-            telemetryData.put("sector2Time", 30.0 + Math.random() * 5);
-            telemetryData.put("sector3Time", 35.0 + Math.random() * 5);
-            telemetryData.put("lastLapTime", 0.0);
-            telemetryData.put("lastSector1Time", 0.0);
-            telemetryData.put("lastSector2Time", 0.0);
-            telemetryData.put("lastSector3Time", 0.0);
-            telemetryData.put("bestLapTime", 90.0 + Math.random() * 10);
-            telemetryData.put("bestSector1Time", 25.0 + Math.random() * 5);
-            telemetryData.put("bestSector2Time", 30.0 + Math.random() * 5);
-            telemetryData.put("bestSector3Time", 35.0 + Math.random() * 5);
-            
-            // Send to WebSocket clients
-            String json = objectMapper.writeValueAsString(telemetryData);
-            webSocketHandler.broadcastTelemetry(json);
-            
-            log.info("UDP Packet Processed - Type: {}, Size: {} bytes", packetType, packetLength);
-            
-=======
             packetsReceived.incrementAndGet();
+            
+            // DEBUG: Log source address
+            String sourceAddress = packet.getAddress().getHostAddress();
+            int sourcePort = packet.getPort();
+            
+            // Show hex of first 32 bytes for debugging
+            StringBuilder hex = new StringBuilder();
+            byte[] data = packet.getData();
+            log.debug("UDP packet received: length={}", packetLength);
+            for (int i = 0; i < Math.min(32, packetLength); i++) {
+                hex.append(String.format("%02X ", data[i]));
+            }
+            log.debug("UDP from {}:{} - hex: {}", sourceAddress, sourcePort, hex);
 
             Object parsedData = PacketParser.parse(packet.getData(), packetLength);
 
@@ -178,8 +131,6 @@ public class UdpServerService {
                     lastPpsUpdate = now;
                 }
             }
-
->>>>>>> be
         } catch (Exception e) {
             log.error("Error processing UDP packet", e);
         }

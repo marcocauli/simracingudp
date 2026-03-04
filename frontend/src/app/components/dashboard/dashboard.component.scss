@@ -64,22 +64,29 @@
   }
 
   .telemetry-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 16px;
     max-width: 1400px;
     margin: 0 auto;
 
-    @media (max-width: 1200px) {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .telemetry-card {
+      flex: 0 0 calc(25% - 12px);
+      min-height: 140px;
+      height: auto;
 
-    @media (max-width: 900px) {
-      grid-template-columns: repeat(2, 1fr);
-    }
+      @media (max-width: 1200px) {
+        flex: 0 0 calc(33.333% - 11px);
+      }
 
-    @media (max-width: 600px) {
-      grid-template-columns: 1fr;
+      @media (max-width: 900px) {
+        flex: 0 0 calc(50% - 8px);
+      }
+
+      @media (max-width: 600px) {
+        flex: 0 0 100%;
+      }
     }
   }
 
@@ -175,83 +182,114 @@
   }
 
   .pedal-card {
-    .pedal-display {
+    .pedal-gauges {
       display: flex;
-      gap: 16px;
+      justify-content: center;
+      gap: 24px;
+    }
 
-      .pedal {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
+    .pedal-gauge {
+      position: relative;
+      width: 100px;
+      height: 100px;
 
-        .pedal-bar {
-          width: 100%;
-          height: 80px;
-          background: #15151f;
-          border-radius: 8px;
-          position: relative;
-          overflow: hidden;
+      svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
 
-          &::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: var(--height, 0%);
-            background: var(--color, #4a4aff);
-            transition: height 0.1s ease;
-          }
-        }
+      .gauge-bg {
+        fill: none;
+        stroke: #15151f;
+        stroke-width: 8;
+      }
 
-        &.throttle .pedal-bar::after {
-          --color: #00ff88;
-        }
+      .gauge-progress {
+        fill: none;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 282.74;
+        transition: stroke-dashoffset 0.15s ease;
+      }
 
-        &.brake .pedal-bar::after {
-          --color: #ff4444;
-        }
+      &.throttle .gauge-progress {
+        stroke: #00ff88;
+        filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.5));
+      }
 
-        .pedal-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #8b8b9e;
-        }
+      &.brake .gauge-progress {
+        stroke: #ff4444;
+        filter: drop-shadow(0 0 4px rgba(255, 68, 68, 0.5));
+      }
 
-        .pedal-value {
-          font-size: 12px;
-          font-family: 'Roboto Mono', monospace;
-          color: #fff;
-        }
+      .gauge-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 20px;
+        font-weight: 700;
+        font-family: 'Roboto Mono', monospace;
+        color: #fff;
+      }
+
+      .gauge-label {
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        font-weight: 600;
+        color: #6b6b7d;
+        letter-spacing: 1px;
       }
     }
   }
 
   .steering-card {
-    .steering-display {
-      .steering-bar {
-        height: 12px;
-        background: #15151f;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        position: relative;
+    .steering-gauge {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-        .steering-indicator {
-          position: absolute;
-          top: -4px;
-          width: 4px;
-          height: 20px;
-          background: #4a4aff;
-          border-radius: 2px;
-          transition: left 0.1s ease;
-        }
+      svg {
+        width: 100%;
+        max-width: 200px;
+        height: auto;
+      }
+
+      .steering-arc {
+        filter: drop-shadow(0 0 4px rgba(74, 74, 255, 0.3));
+      }
+
+      .steering-label {
+        font-size: 10px;
+        fill: #6b6b7d;
+        font-family: 'Roboto Mono', monospace;
+      }
+
+      .steering-center-label {
+        font-size: 10px;
+        fill: #4a4aff;
+        font-family: 'Roboto Mono', monospace;
+        text-anchor: middle;
+      }
+
+      .steering-indicator {
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+        transition: transform 0.1s ease;
+      }
+
+      .steering-center {
+        filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
       }
 
       .steering-value {
-        font-size: 18px;
-        font-weight: 600;
+        margin-top: 8px;
+        font-size: 24px;
+        font-weight: 700;
         font-family: 'Roboto Mono', monospace;
         color: #fff;
       }
@@ -287,11 +325,172 @@
     }
   }
 
-  .lap-timing-card {
-    grid-column: span 2;
+  .tire-wear-card, .tire-temps-card {
+    .tire-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 8px;
 
-    @media (max-width: 900px) {
-      grid-column: span 1;
+      .tire-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+
+        .tire-bar-container {
+          width: 100%;
+          height: 60px;
+          background: #15151f;
+          border-radius: 6px;
+          position: relative;
+          overflow: hidden;
+
+          .tire-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 6px;
+            transition: height 0.3s ease;
+          }
+        }
+
+        .tire-value {
+          font-size: 14px;
+          font-weight: 600;
+          font-family: 'Roboto Mono', monospace;
+          color: #fff;
+        }
+
+        .tire-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #6b6b7d;
+          text-transform: uppercase;
+        }
+
+        .tire-temp-circle {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: 3px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+
+          span {
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+          }
+        }
+      }
     }
   }
+
+  .json-logs-container {
+    margin-top: 24px;
+    background: linear-gradient(145deg, #1e1e2f, #252538);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #2a2a3d;
+
+    .json-logs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+
+      .json-logs-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #6b6b7d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .json-status {
+          font-size: 10px;
+          color: #6b6b7d;
+        }
+
+        .clear-logs-btn {
+          background: #15151f;
+          border: 1px solid #2a2a3d;
+          color: #8b8b9e;
+          padding: 4px 12px;
+          border-radius: 4px;
+          font-size: 11px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #2a2a3d;
+            color: #fff;
+          }
+        }
+      }
+    }
+
+    .json-logs-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, margin-top 0.3s ease;
+
+      &.expanded {
+        max-height: 200px;
+        margin-top: 12px;
+      }
+    }
+
+    .json-logs {
+      width: 100%;
+      max-height: 150px;
+      overflow: auto;
+      background: #0d0d14;
+      border: 1px solid #2a2a3d;
+      border-radius: 8px;
+      color: #00ff88;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 11px;
+      padding: 12px;
+      line-height: 1.4;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  }
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  transform: scale(1.03);
+  z-index: 1000;
+  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+  background: linear-gradient(145deg, #2a2a4a, #3a3a5a);
+  border: 2px dashed #4a4aff;
+  border-radius: 12px;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.telemetry-grid.cdk-drop-list-dragging .telemetry-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }

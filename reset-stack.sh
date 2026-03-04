@@ -21,6 +21,52 @@ FRONTEND_DIR="$SCRIPT_DIR/frontend"
 MOCK_SERVER_DIR="$SCRIPT_DIR/mock-server"
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
 
+BUILD_BACKEND_DOCKER=true
+BUILD_FRONTEND_DOCKER=true
+BUILD_MOCK_DOCKER=true
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --backend-docker)
+                BUILD_BACKEND_DOCKER=true
+                ;;
+            --backend-local)
+                BUILD_BACKEND_DOCKER=false
+                ;;
+            --frontend-docker)
+                BUILD_FRONTEND_DOCKER=true
+                ;;
+            --frontend-local)
+                BUILD_FRONTEND_DOCKER=false
+                ;;
+            --mock-docker)
+                BUILD_MOCK_DOCKER=true
+                ;;
+            --mock-local)
+                BUILD_MOCK_DOCKER=false
+                ;;
+            --all-docker)
+                BUILD_BACKEND_DOCKER=true
+                BUILD_FRONTEND_DOCKER=true
+                BUILD_MOCK_DOCKER=true
+                ;;
+            --all-local)
+                BUILD_BACKEND_DOCKER=false
+                BUILD_FRONTEND_DOCKER=false
+                BUILD_MOCK_DOCKER=false
+                ;;
+            *)
+                ;;
+        esac
+        shift
+    done
+}
+
+COMMAND="${1:-help}"
+shift
+parse_args "$@"
+
 echo -e "${BLUE}🏁 Racing Telemetry Monorepo Stack Management${NC}"
 echo -e "${BLUE}===============================================${NC}"
 
@@ -52,7 +98,7 @@ stop_containers() {
     fi
     
     # Kill any remaining containers using our ports
-    local containers_to_stop=$(docker ps -q --filter "publish=8080" 2>/dev/null || true)
+    local containers_to_stop=$(docker ps -q --filter "publish=18888" 2>/dev/null || true)
     if [ -n "$containers_to_stop" ]; then
         docker stop $containers_to_stop
         print_message $GREEN "✅ Backend container stopped"
@@ -81,94 +127,40 @@ cleanup_docker() {
     docker compose down --rmi all --volumes --remove-orphans 2>/dev/null || true
     
     # Remove any remaining custom images
-    docker rmi -f simracingapp-backend 2>/dev/null || true
-    docker rmi -f simracingapp-frontend 2>/dev/null || true
-    docker rmi -f simracingapp-mock-server 2>/dev/null || true
+    docker rmi -f simracingudp-backend 2>/dev/null || true
+    docker rmi -f simracingudp-frontend 2>/dev/null || true
+    docker rmi -f simracingudp-mock-server 2>/dev/null || true
     
     print_message $GREEN "✅ Docker cleanup completed"
 }
 
-# Function to build backend externally
-build_backend_external() {
-    print_message $CYAN "🔨 Building backend externally..."
+# Function to build backend
+build_backend() {
+    if [ "$BUILD_BACKEND_DOCKER" = true ]; then
+        build_backend_docker
+    else
+        build_backend_local
+    fi
+}
+
+# Function to build backend with Docker
+build_backend_docker() {
+    print_message $CYAN "🔨 Building backend with Docker..."
     
     cd "$BACKEND_DIR"
     
-    # Fix ownership issues from previous Docker builds
-    if [ -d "target" ]; then
-        print_message $YELLOW "🔧 Fixing permissions from previous builds..."
-        # Try to fix permissions without sudo
-        find target -type f -exec chmod 644 {} \; 2>/dev/null || true
-        find target -type d -exec chmod 755 {} \; 2>/dev/null || true
-    fi
-    
-    # Check if Java is available locally
-    if ! command -v java &> /dev/null; then
-        print_message $YELLOW "⚠️  Java not found locally, using Docker for backend build to ensure Java 21 compatibility"
-        
-        # Use Docker for Maven build with proper user mapping
-        docker run --rm \
-            -v "$BACKEND_DIR":/app \
-            -w /app \
-            -u "$(id -u):$(id -g)" \
-            eclipse-temurin:21-jdk-alpine \
-            sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
-    else
-        # Check Java version
-        JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1)
-        if [ "$JAVA_VERSION" -lt 21 ]; then
-            print_message $YELLOW "⚠️  Java version $JAVA_VERSION detected, using Docker for backend build to ensure Java 21 compatibility"
-            
-            docker run --rm \
-                -v "$BACKEND_DIR":/app \
-                -w /app \
-                -u "$(id -u):$(id -g)" \
-                eclipse-temurin:21-jdk-alpine \
-                sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
-        else
-            # Check if target directory has permission issues
-            if [ -d "target" ] && [ ! -w "target" ]; then
-                print_message $YELLOW "⚠️  Permission issues detected in target directory, using Docker for build"
-                
-                docker run --rm \
-                    -v "$BACKEND_DIR":/app \
-                    -w /app \
-                    eclipse-temurin:21-jdk-alpine \
-                    sh -c "apk add --no-cache maven && mvn clean package -DskipTests && chown -R $(id -u):$(id -g) target/"
-            else
-                print_message $GREEN "✅ Using local Java for backend build"
-                
-                # Use local Maven if available, otherwise use Docker for Maven
-                if command -v mvn &> /dev/null; then
-                    # Try to clean first, but continue if it fails
-                    mvn clean 2>/dev/null || true
-                    mvn package -DskipTests
-                else
-                    docker run --rm \
-                        -v "$BACKEND_DIR":/app \
-                        -w /app \
-                        -u "$(id -u):$(id -g)" \
-                        eclipse-temurin:21-jdk-alpine \
-                        sh -c "apk add --no-cache maven && mvn clean package -DskipTests"
-                fi
-            fi
-        fi
-    fi
+    docker run --rm \
+        -v "$BACKEND_DIR":/app \
+        -w /app \
+        eclipse-temurin:21-jdk-alpine \
+        sh -c "apk add --no-cache maven && mvn clean package -DskipTests && chown -R 1000:1000 target/"
     
     if [ $? -eq 0 ]; then
         print_message $GREEN "✅ Backend built successfully"
         
-        # Verify JAR was created and copy to expected location
         JAR_FILE="target/telemetry-reader-backend-0.0.1-SNAPSHOT.jar"
         if [ -f "$JAR_FILE" ]; then
             print_message $GREEN "✅ JAR file created at $JAR_FILE"
-            
-            # Copy JAR to backend target for Docker
-            mkdir -p "$BACKEND_DIR/target"
-            if [ ! -f "$BACKEND_DIR/target/app.jar" ]; then
-                cp "$JAR_FILE" "$BACKEND_DIR/target/app.jar"
-                print_message $GREEN "✅ JAR copied to backend/target/app.jar for Docker"
-            fi
         else
             print_message $RED "❌ JAR file not found after build"
             ls -la target/ || echo "target directory does not exist"
@@ -180,50 +172,58 @@ build_backend_external() {
     fi
 }
 
-# Function to build frontend externally
-build_frontend_external() {
-    print_message $CYAN "🎨 Building frontend externally..."
+# Function to build backend locally
+build_backend_local() {
+    print_message $CYAN "🔨 Building backend locally..."
+    
+    cd "$BACKEND_DIR"
+    
+    if [ -f "mvnw" ]; then
+        ./mvnw clean package -DskipTests
+    else
+        mvn clean package -DskipTests
+    fi
+    
+    if [ $? -eq 0 ]; then
+        print_message $GREEN "✅ Backend built successfully"
+        
+        JAR_FILE="target/telemetry-reader-backend-0.0.1-SNAPSHOT.jar"
+        if [ -f "$JAR_FILE" ]; then
+            print_message $GREEN "✅ JAR file created at $JAR_FILE"
+        else
+            print_message $RED "❌ JAR file not found after build"
+            exit 1
+        fi
+    else
+        print_message $RED "❌ Backend build failed"
+        exit 1
+    fi
+}
+
+# Function to build frontend
+build_frontend() {
+    if [ "$BUILD_FRONTEND_DOCKER" = true ]; then
+        build_frontend_docker
+    else
+        build_frontend_local
+    fi
+}
+
+# Function to build frontend with Docker
+build_frontend_docker() {
+    print_message $CYAN "🎨 Building frontend with Docker..."
     
     cd "$FRONTEND_DIR"
     
-    # Check if Node.js is available
-    if ! command -v node &> /dev/null; then
-        print_message $YELLOW "⚠️  Node.js not found locally, using Docker for frontend build..."
-        
-        # Use Docker for Node.js build
-        docker run --rm \
-            -v "$FRONTEND_DIR":/app \
-            -w /app \
-            node:20-alpine \
-            sh -c "npm ci --legacy-peer-deps && npm run build"
-    else
-        # Check Node.js version
-        NODE_VERSION=$(node -v | cut -d'v' -f2)
-        if [ "$NODE_VERSION" -lt 20 ]; then
-            print_message $YELLOW "⚠️  Node.js version $NODE_VERSION detected, using Docker for frontend build..."
-            
-            docker run --rm \
-                -v "$FRONTEND_DIR":/app \
-                -w /app \
-                node:20-alpine \
-                sh -c "npm ci --legacy-peer-deps && npm run build"
-        else
-            print_message $GREEN "✅ Using local Node.js v$NODE_VERSION for frontend build"
-            
-            # Install dependencies if node_modules doesn't exist
-            if [ ! -d "node_modules" ]; then
-                npm ci --legacy-peer-deps
-            fi
-            
-            # Build Angular app
-            npm run build
-        fi
-    fi
+    docker run --rm \
+        -v "$FRONTEND_DIR":/app \
+        -w /app \
+        node:20-alpine \
+        sh -c "npm ci --legacy-peer-deps && npm run build"
     
     if [ $? -eq 0 ]; then
         print_message $GREEN "✅ Frontend built successfully"
         
-        # Verify build was created
         if [ -d "dist/frontend" ]; then
             print_message $GREEN "✅ Frontend dist created successfully"
         else
@@ -232,6 +232,74 @@ build_frontend_external() {
         fi
     else
         print_message $RED "❌ Frontend build failed"
+        exit 1
+    fi
+}
+
+# Function to build frontend locally
+build_frontend_local() {
+    print_message $CYAN "🎨 Building frontend locally..."
+    
+    cd "$FRONTEND_DIR"
+    
+    if [ ! -d "node_modules" ]; then
+        npm ci --legacy-peer-deps
+    fi
+    
+    npm run build
+    
+    if [ $? -eq 0 ]; then
+        print_message $GREEN "✅ Frontend built successfully"
+        
+        if [ -d "dist/frontend" ]; then
+            print_message $GREEN "✅ Frontend dist created successfully"
+        else
+            print_message $RED "❌ Frontend dist not found after build"
+            exit 1
+        fi
+    else
+        print_message $RED "❌ Frontend build failed"
+        exit 1
+    fi
+}
+
+# Function to build mock-server
+build_mock() {
+    if [ "$BUILD_MOCK_DOCKER" = true ]; then
+        build_mock_docker
+    else
+        build_mock_local
+    fi
+}
+
+# Function to build mock-server with Docker
+build_mock_docker() {
+    print_message $CYAN "📡 Building mock-server with Docker..."
+    
+    cd "$MOCK_SERVER_DIR"
+    
+    docker build -t simracingudp-mock-server .
+    
+    if [ $? -eq 0 ]; then
+        print_message $GREEN "✅ Mock-server Docker image built successfully"
+    else
+        print_message $RED "❌ Mock-server build failed"
+        exit 1
+    fi
+}
+
+# Function to build mock-server locally
+build_mock_local() {
+    print_message $CYAN "📡 Building mock-server locally..."
+    
+    cd "$MOCK_SERVER_DIR"
+    
+    npm install
+    
+    if [ $? -eq 0 ]; then
+        print_message $GREEN "✅ Mock-server dependencies installed"
+    else
+        print_message $RED "❌ Mock-server install failed"
         exit 1
     fi
 }
@@ -266,7 +334,7 @@ wait_for_services() {
     # Wait for Spring Boot
     local spring_boot_ready=false
     for i in {1..30}; do
-        if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+        if curl -s http://localhost:18888/actuator/health > /dev/null 2>&1; then
             spring_boot_ready=true
             break
         fi
@@ -276,7 +344,7 @@ wait_for_services() {
     echo
     
     if [ "$spring_boot_ready" = true ]; then
-        print_message $GREEN "✅ Backend ready at http://localhost:8080"
+        print_message $GREEN "✅ Backend ready at http://localhost:18888"
     else
         print_message $RED "❌ Backend failed to start"
         return 1
@@ -306,9 +374,9 @@ wait_for_services() {
     echo "   Mock Server running in container on UDP port 5606"
     echo ""
     echo -e "${CYAN}📊 Service URLs:${NC}"
-    echo -e "   ${GREEN}Backend API:${NC} http://localhost:8080"
+    echo -e "   ${GREEN}Backend API:${NC} http://localhost:18888"
     echo -e "   ${GREEN}Frontend:${NC}   http://localhost:4200"
-    echo -e "   ${GREEN}Backend Health:${NC} http://localhost:8080/actuator/health"
+    echo -e "   ${GREEN}Backend Health:${NC} http://localhost:18888/actuator/health"
 }
 
 # Function to show logs
@@ -323,8 +391,8 @@ show_status() {
     echo ""
     
     # Backend status
-    if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
-        print_message $GREEN "✅ Backend: RUNNING (http://localhost:8080)"
+    if curl -s http://localhost:18888/actuator/health > /dev/null 2>&1; then
+        print_message $GREEN "✅ Backend: RUNNING (http://localhost:18888)"
     else
         print_message $RED "❌ Backend: DOWN"
     fi
@@ -337,7 +405,7 @@ show_status() {
     fi
     
     # Mock Server status
-    local mock_running=$(docker ps --filter "name=simracingapp-mock-server" --format "table {{.Names}}" 2>/dev/null | grep -v NAMES || echo "")
+    local mock_running=$(docker ps --filter "name=simracingudp-mock-server" --format "table {{.Names}}" 2>/dev/null | grep -v NAMES || echo "")
     if [ -n "$mock_running" ]; then
         print_message $GREEN "✅ Mock Server: RUNNING"
     else
@@ -349,26 +417,37 @@ show_status() {
 
 # Function to show usage
 show_usage() {
-    echo -e "${CYAN}Usage: $0 [command]${NC}"
+    echo -e "${CYAN}Usage: $0 [command] [flags]${NC}"
     echo ""
     echo -e "${PURPLE}Commands:${NC}"
-    echo -e "  ${GREEN}start${NC}         Build all sources externally and start services (Docker)"
+    echo -e "  ${GREEN}start${NC}         Build and start all services (Docker)"
     echo -e "  ${GREEN}dev${NC}           Start development mode (hot reload with local tools)"
     echo -e "  ${GREEN}fast${NC}          Restart containers only (no rebuild, ~15 sec)"
     echo -e "  ${GREEN}stop${NC}          Stop all services"
     echo -e "  ${GREEN}restart${NC}       Rebuild and restart all services"
     echo -e "  ${GREEN}reset${NC}        Complete cleanup: stop, remove containers and images"
     echo -e "  ${GREEN}clean${NC}        Deep clean (remove containers, images, volumes)"
-    echo -e "  ${GREEN}build${NC}        Build all sources externally (no Docker start)"
-    echo -e "  ${GREEN}build-backend${NC}   Build backend only (external)"
-    echo -e "  ${GREEN}build-frontend${NC}  Build frontend only (external)"
+    echo -e "  ${GREEN}build${NC}        Build all sources (no Docker start)"
+    echo -e "  ${GREEN}build-backend${NC}   Build backend only"
+    echo -e "  ${GREEN}build-frontend${NC}  Build frontend only"
+    echo -e "  ${GREEN}build-mock${NC}     Build mock-server only"
     echo -e "  ${GREEN}logs${NC}         Show logs from running services"
     echo -e "  ${GREEN}status${NC}       Show current service status"
     echo ""
+    echo -e "${PURPLE}Build Flags:${NC}"
+    echo -e "  ${CYAN}--backend-docker${NC}   Build backend with Docker (default)"
+    echo -e "  ${CYAN}--backend-local${NC}    Build backend with local Maven"
+    echo -e "  ${CYAN}--frontend-docker${NC}  Build frontend with Docker (default)"
+    echo -e "  ${CYAN}--frontend-local${NC}   Build frontend with local npm"
+    echo -e "  ${CYAN}--mock-docker${NC}      Build mock-server with Docker (default)"
+    echo -e "  ${CYAN}--mock-local${NC}       Build mock-server with local npm"
+    echo -e "  ${CYAN}--all-docker${NC}       Build all with Docker (default)"
+    echo -e "  ${CYAN}--all-local${NC}        Build all with local tools"
+    echo ""
     echo -e "${YELLOW}Quick Reference:${NC}"
-    echo -e "  ${CYAN}$0 fast${NC}        # Fast restart (15 sec) - per test rapidi"
-    echo -e "  ${CYAN}$0 dev${NC}         # Sviluppo con hot reload"
-    echo -e "  ${CYAN}$0 start${NC}       # Primo avvio o dopo modifiche strutturali"
+    echo -e "  ${CYAN}$0 start${NC}            # Build all with Docker (default)"
+    echo -e "  ${CYAN}$0 start --all-local${NC} # Build all locally"
+    echo -e "  ${CYAN}$0 start --backend-local${NC} # Hybrid: local backend, Docker frontend+mock"
     echo ""
 }
 
@@ -403,7 +482,7 @@ start_development() {
     echo "Mock Server PID: $mock_pid"
     
     print_message $GREEN "✅ Development mode started"
-    print_message $CYAN "Backend: http://localhost:8080 (dev mode)"
+    print_message $CYAN "Backend: http://localhost:18888 (dev mode)"
     print_message $CYAN "Frontend: http://localhost:4200 (dev mode)"
     print_message $CYAN "Mock Server: UDP port 5606"
     
@@ -419,12 +498,12 @@ start_development() {
 }
 
 # Parse command line arguments
-case "${1:-help}" in
+case "$COMMAND" in
     "start")
         check_docker
         stop_containers
-        build_backend_external
-        build_frontend_external
+        build_backend
+        build_frontend
         start_services_with_build
         wait_for_services
         show_status
@@ -448,8 +527,8 @@ case "${1:-help}" in
     "restart")
         check_docker
         stop_containers
-        build_backend_external
-        build_frontend_external
+        build_backend
+        build_frontend
         start_services_with_build
         wait_for_services
         show_status
@@ -464,18 +543,23 @@ case "${1:-help}" in
         check_docker
         stop_containers
         cleanup_docker
-        docker system prune -f
+        docker system prune -f --filter "label=com.docker.compose.project=simracingudp"
+        docker images simracingudp-* -q | xargs -r docker rmi -f
+        docker volume ls -q --filter "name=simracingudp" | xargs -r docker volume rm 2>/dev/null || true
         print_message $GREEN "✅ Deep clean completed"
         ;;
     "build")
-        build_backend_external
-        build_frontend_external
+        build_backend
+        build_frontend
         ;;
     "build-backend")
-        build_backend_external
+        build_backend
         ;;
     "build-frontend")
-        build_frontend_external
+        build_frontend
+        ;;
+    "build-mock")
+        build_mock
         ;;
     "logs")
         show_logs

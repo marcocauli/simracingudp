@@ -114,7 +114,7 @@ Storage e analisi dati sessioni complete
 - **Development Environment**: Docker Compose con tutti i servizi attivi
 - **Mock Data Server**: Physics engine con sessioni realistiche (1m-1h+)
 - **Angular 17 Setup**: Standalone app deployata e funzionante
-- **Docker Deployment**: Tutti i servizi funzionanti (backend:8080, frontend:4200, mock:5606)
+- **Docker Deployment**: Tutti i servizi funzionanti (backend:18888, frontend:4200, mock:5606)
 - **Health Monitoring**: Endpoint health funzionanti per tutti i servizi
 - **Documentation System**: Struttura opencode_docs/ implementata
 - **Network Integration**: Comunicazione stabile tra tutti i servizi
@@ -199,26 +199,27 @@ Storage e analisi dati sessioni complete
 
 ## 📊 **Project Progress Summary**
 
-### **Overall Progress**: 80% ✅
+### **Overall Progress**: 85% ✅
 
 - **Infrastructure Setup**: 95% ✅
-- **Backend Core**: 65% ✅
+- **Backend Core**: 75% ✅
 - **Frontend UI**: 30% 🔄  
 - **Integration**: 85% ✅
-- **Testing**: 25% 📋
+- **Testing**: 30% 📋
 
 ### **Key Achievements**
 - ✅ **Monorepo Structure** con clean separation
 - ✅ **Docker Orchestration** funzionante
 - ✅ **Mock Server** con physics engine realistico
 - ✅ **Angular 17 Foundation** con service layer
+- ✅ **UDP Packet Parser** - 5 packet types implemented
 - 🔄 **Real-time Data Flow** in sviluppo
 
 ### **Current Focus**
-1. **Frontend Dashboard Components** - Sostituire template default con dashboard telemetria
-2. **Backend WebSocket Implementation** - Implementare endpoint `/ws/telemetry` 
-3. **Real-time Data Integration** - Collegare frontend WebSocket al backend
-4. **UI Gauges Development** - Speed gauge, RPM meter, steering indicator
+1. **Backend WebSocket** - Implementare streaming al frontend
+2. **Frontend Dashboard Components** - Sostituire template default con dashboard telemetria
+3. **UI Gauges Development** - Speed gauge, RPM meter, steering indicator
+4. **Real-time Data Integration** - Collegare frontend WebSocket al backend
 5. **Performance Testing** - Validare flusso completo UDP → Backend → Frontend
 
 ---

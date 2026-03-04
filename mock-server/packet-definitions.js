@@ -35,7 +35,7 @@ class PacketBase {
 // Car Physics Packet Type 0 (556 bytes total)
 class TelemetryData {
     constructor() {
-        this.sBase = new PacketBase(0, 0, PacketType.CAR_PHYSICS, 2);
+        this.sBase = new PacketBase(0, 0, PacketType.CAR_PHYSICS, 21);
         this.sViewedParticipantIndex = 0;
         this.sUnfilteredThrottle = 0;
         this.sUnfilteredBrake = 0;
@@ -47,6 +47,7 @@ class TelemetryData {
         this.sWaterTempCelsius = 85;
         this.sWaterPressureKpa = 120;
         this.sFuelPressureKpa = 600;
+        this.sCarFlags2 = 0;
         this.sFuelCapacity = 100;
         this.sBrake = 0;
         this.sThrottle = 0;
@@ -56,6 +57,7 @@ class TelemetryData {
         this.sRpm = 1000;
         this.sMaxRpm = 8000;
         this.sSteering = 0;
+        this.sCurrentGear = 0;
         this.sGearNumGears = 6;
         this.sBoostAmount = 0;
         this.sCrashState = 0;

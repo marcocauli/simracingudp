@@ -18,6 +18,19 @@
       color: #8b8b9e;
       text-transform: uppercase;
       letter-spacing: 1px;
+
+      .wip-badge {
+        display: inline-block;
+        background: #ff9800;
+        color: #000;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+        text-transform: uppercase;
+      }
     }
 
     .best-lap {

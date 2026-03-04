@@ -6,7 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "18888:18888"
     volumes:
       - ./backend/src:/app/src
       - ./backend/target:/app/target
@@ -26,7 +26,7 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/node_modules:/app/node_modules
     environment:
-      - BACKEND_URL=http://backend:8080
+      - BACKEND_URL=http://backend:18888
     networks:
       - telemetry-network
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       - TARGET_HOST=backend
       - SESSION_TYPE=race
       - SESSION_DURATION=1800
-      - UPDATE_RATE=60
+      - UPDATE_RATE=0.1
       - ENABLE_TIRE_DEGRADATION=true
       - ENABLE_FUEL_CONSUMPTION=true
       - ENABLE_WEATHER_CHANGES=false

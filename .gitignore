@@ -1,6 +1,11 @@
 /.idea/
+/logs/
 /target/
 /backend/target/
 **/.classpath
 **/.project
 **/.factorypath
+**/.settings/
+**/.vscode/
+**/package-lock.json
+/mock-server/node_modules/

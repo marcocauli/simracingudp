@@ -142,3 +142,30 @@ cd frontend && npx tsc --noEmit
 - **Editor**: VSCode with Angular extension
 - **Formatting**: EditorConfig with 2-space indentation, single quotes for TypeScript
 - **Code Quality**: ESLint + Prettier (frontend), SonarQube rules (backend)
+
+### Local Development Logs
+
+When running the application locally (not in Docker), logs are stored in the `logs/` directory:
+
+```bash
+# Log file locations
+logs/backend.log     # Spring Boot application logs
+logs/frontend.log    # Frontend Nginx logs
+logs/mock-server.log # Mock server logs
+```
+
+**Log configuration** (in `backend/src/main/resources/application.properties`):
+```properties
+logging.file.name=logs/backend.log
+logging.level.com.simracingapps.telemetry-reader=DEBUG
+```
+
+To view logs in real-time:
+```bash
+# Watch backend logs
+tail -f logs/backend.log
+
+# Search for specific patterns
+grep "Parsing packet" logs/backend.log
+grep "Error" logs/backend.log
+```

@@ -27,6 +27,8 @@ class RacingPhysicsEngine {
             lapDistance: 0,
             sessionTime: 0,
             fuelLevel: 100,
+            currentGear: 1,
+            currentSpeed: 50,
             tireWear: [0, 0, 0, 0], // FL, FR, RL, RR
             tireTemps: [70, 70, 70, 70],
             brakeTemps: [50, 50, 50, 50],
@@ -34,6 +36,8 @@ class RacingPhysicsEngine {
             trackTemperature: 25,
             airTemperature: 20
         };
+        
+        this._currentSpeed = 50;
 
         this.driverProfile = {
             aggressionLevel: 0.7, // 0-1 scale
@@ -153,7 +157,12 @@ class RacingPhysicsEngine {
      */
     calculateBrake(targetSpeed, currentSpeed) {
         const speedDifference = currentSpeed - targetSpeed;
-        const brakingDistance = this.calculateBrakingDistance(currentSpeed, targetSpeed);
+        
+        // Random hard braking events every few seconds to simulate race conditions
+        // This helps vary RPM and gear shifting
+        if (Math.random() < 0.03) { // 3% chance per frame (~2x per second at 60fps)
+            return 85 + Math.random() * 15; // Hard brake: 85-100%
+        }
         
         if (speedDifference > 30) {
             // Hard braking
@@ -183,6 +192,13 @@ class RacingPhysicsEngine {
      * Calculate realistic steering angle based on track position
      */
     calculateSteeringAngle(distance) {
+        // Random extreme steering events (simulates aggressive corner entries, pilot errors)
+        // Run BEFORE corner logic to ensure it executes
+        if (Math.random() < 0.20) { // 20% chance per frame
+            const extremeAngle = 45 + Math.random() * 45; // 45-90 degrees
+            return (Math.random() < 0.5 ? -1 : 1) * extremeAngle;
+        }
+
         for (const corner of this.trackProfile.corners) {
             const distanceToCorner = distance - corner.distance;
             const cornerEntryDistance = 150; // meters before corner
@@ -231,10 +247,31 @@ class RacingPhysicsEngine {
     }
 
     /**
+     * Simulate automatic gear shifting
+     */
+    simulateGearShifting(currentGear, rpm) {
+        const upshiftRPM = 6500; // Shift up earlier
+        const downshiftRPM = 3500; // Downshift earlier
+        const minGear = 1;
+        const maxGear = 5;
+
+        if (rpm > upshiftRPM && currentGear < maxGear) {
+            return currentGear + 1;
+        }
+
+        if (rpm < downshiftRPM && currentGear > minGear) {
+            return currentGear - 1;
+        }
+
+        return currentGear;
+    }
+
+    /**
      * Calculate RPM based on speed and gear
      */
     calculateRPM(speed, gear) {
-        if (gear === 0) return this.carConfig.idleRpm;
+        if (gear === 0 || gear === undefined || gear === null) return this.carConfig.idleRpm;
+        if (gear < 1) gear = 1;
         
         const gearRatio = this.carConfig.gearRatios[gear - 1];
         const wheelRPM = (speed * 1000) / (60 * this.carConfig.tireRadius * 2 * Math.PI);
@@ -247,7 +284,7 @@ class RacingPhysicsEngine {
      * Update tire wear based on current conditions
      */
     updateTireWear(distance, speed, lateralG) {
-        const wearRate = 0.001; // Base wear rate per meter
+        const wearRate = 0.1; // Increased for visible testing
         
         for (let i = 0; i < 4; i++) {
             // Calculate load distribution
@@ -255,13 +292,16 @@ class RacingPhysicsEngine {
             const rearLoad = 1 - frontLoad;
             const loadDistribution = i < 2 ? frontLoad : rearLoad;
             
+            // Random factor for non-homogeneous wear (0.5 to 1.5)
+            const randomFactor = 0.5 + Math.random();
+            
             // Calculate wear factors
             const speedFactor = 1 + (speed / this.carConfig.maxSpeed);
             const lateralFactor = 1 + Math.abs(lateralG) / 2;
             const temperatureFactor = 1 + Math.abs(this.sessionState.tireTemps[i] - 80) / 100;
             
             // Apply wear
-            const wearIncrement = wearRate * loadDistribution * speedFactor * lateralFactor * temperatureFactor;
+            const wearIncrement = wearRate * loadDistribution * speedFactor * lateralFactor * temperatureFactor * randomFactor;
             this.sessionState.tireWear[i] = Math.min(100, this.sessionState.tireWear[i] + wearIncrement);
         }
     }
@@ -287,8 +327,12 @@ class RacingPhysicsEngine {
             // Update temperature
             this.sessionState.tireTemps[i] += (generatedHeat + ambientCooling) * 0.01;
             
+            // Add random variation (±5 degrees)
+            const randomVariation = (Math.random() - 0.5) * 5;
+            this.sessionState.tireTemps[i] += randomVariation;
+            
             // Clamp temperature
-            this.sessionState.tireTemps[i] = Math.max(ambientTemp, 
+            this.sessionState.tireTemps[i] = Math.max(ambientTemp - 10, 
                 Math.min(120, this.sessionState.tireTemps[i]));
         }
     }
@@ -324,18 +368,44 @@ class RacingPhysicsEngine {
     generateTelemetryData(deltaTime) {
         const distance = this.sessionState.lapDistance;
         const targetSpeed = this.calculateOptimalSpeed(distance);
-        const currentSpeed = this.getCurrentSpeed();
+        let currentSpeed = this.getCurrentSpeed();
         
         // Calculate controls
         const throttle = this.calculateThrottle(targetSpeed, currentSpeed);
         const brake = this.calculateBrake(targetSpeed, currentSpeed);
         const steering = this.calculateSteeringAngle(distance);
         
-        // Calculate physics
+        // Update speed based on throttle and brake
+        const acceleration = (throttle / 100) * 8; // Acceleration when throttling (km/h per second)
+        const deceleration = (brake / 100) * 15 + 2; // Braking + drag (km/h per second)
+        
+        if (brake > 20) {
+            currentSpeed = Math.max(20, currentSpeed - deceleration * deltaTime);
+        } else if (throttle > 20) {
+            currentSpeed = Math.min(220, currentSpeed + acceleration * deltaTime);
+        } else {
+            // Coast with slight deceleration
+            currentSpeed = Math.max(20, currentSpeed - 1 * deltaTime);
+        }
+        
+        this.setCurrentSpeed(currentSpeed);
+        
+        // Calculate physics - use stored gear and simulate shifting
+        const currentGear = this.sessionState.currentGear;
+        let rpm = this.calculateRPM(currentSpeed, currentGear);
+        
+        // Simulate automatic gear shifting
+        const newGear = this.simulateGearShifting(currentGear, rpm);
+        
+        // Recalculate RPM if gear changed
+        if (newGear !== currentGear) {
+            this.sessionState.currentGear = newGear;
+            rpm = this.calculateRPM(currentSpeed, newGear);
+        }
+        
         const lateralG = this.calculateLateralG(distance, currentSpeed);
         const longitudinalG = this.calculateLongitudinalG(throttle, brake, currentSpeed);
-        const rpm = this.calculateRPM(currentSpeed, this.getCurrentGear());
-        const gear = this.calculateGear(currentSpeed, rpm);
+        const gear = this.sessionState.currentGear;
         
         // Update session state
         this.sessionState.lapDistance += currentSpeed * deltaTime / 3.6; // Convert km/h to m/s
@@ -428,12 +498,17 @@ class RacingPhysicsEngine {
      * Helper methods
      */
     getCurrentSpeed() {
-        // Simplified - would be based on previous state and acceleration
-        return 150 + Math.sin(this.sessionState.sessionTime * 0.1) * 50;
+        // Track speed based on acceleration/deceleration
+        // Initial speed is 0, will increase with throttle
+        return this._currentSpeed !== undefined ? this._currentSpeed : 50;
+    }
+    
+    setCurrentSpeed(speed) {
+        this._currentSpeed = Math.max(20, Math.min(220, speed));
     }
 
     getCurrentGear() {
-        return this.calculateGear(this.getCurrentSpeed(), 6000);
+        return this.sessionState.currentGear;
     }
 
     calculateLateralG(distance, speed) {
@@ -502,6 +577,8 @@ class RacingPhysicsEngine {
             lapDistance: 0,
             sessionTime: 0,
             fuelLevel: 100,
+            currentGear: 1,
+            currentSpeed: 50,
             tireWear: [0, 0, 0, 0],
             tireTemps: [70, 70, 70, 70],
             brakeTemps: [50, 50, 50, 50],
@@ -509,6 +586,7 @@ class RacingPhysicsEngine {
             trackTemperature: 25,
             airTemperature: 20
         };
+        this._currentSpeed = 50;
         this.lapHistory = [];
         
         // Reset sector tracking

@@ -35,7 +35,7 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler {
         sessions.remove(session);
     }
 
-    public void broadcastTelemetry(String telemetryJson) {
+    public synchronized void broadcastTelemetry(String telemetryJson) {
         sessions.removeIf(session -> !session.isOpen());
         
         for (WebSocketSession session : sessions) {

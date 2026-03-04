@@ -156,7 +156,7 @@ Il mock server è progettato per funzionare con il server UDP Spring Boot:
 
 3. **Verifica ricezione dati**:
    ```bash
-   curl http://localhost:8080/v1/udp-status
+    curl http://localhost:18888/v1/udp-status
    ```
 
 ## 🐳 Docker Support

@@ -9,7 +9,7 @@
 - **Configuration**: UDP port 5606, CORS, application properties
 - **Testing Framework**: JUnit 5 + TestContainers configurato
 - **REST Endpoints**: Health endpoint `/api/v1/health` funzionante
-- **Application Status**: JAR deployato e attivo su porta 8080
+- **Application Status**: JAR deployato e attivo su porta 18888
 
 ### 🔄 **Implementazione Parziale (65%)**
 - **UDP Server**: Listener di base su porta 5606 implementato
@@ -27,7 +27,7 @@
 - **Docker Deployment**: Container attivo e funzionante
 - **Health Check**: Endpoint `/api/v1/health` funzionante
 - **Network Configuration**: Comunicazione stabile con frontend
-- **Application Status**: UP e in ascolto su porta 8080
+- **Application Status**: UP e in ascolto su porta 18888
 
 ---
 
@@ -380,9 +380,9 @@ public class SecurityConfig {
 
 ### **Sprint 1: UDP Processing (Week 1-2)**
 - [x] Spring Boot project setup (già completo)
-- [ ] UDP packet parser implementation
-- [ ] Packet models and entities
-- [ ] Basic data validation and error handling
+- [x] UDP packet parser implementation
+- [x] Packet models and entities (TelemetryPacket, RaceDataPacket, TimingsPacket, GameStatePacket)
+- [x] Basic data validation and error handling
 
 ### **Sprint 2: WebSocket & API (Week 3-4)**
 - [ ] WebSocket handler implementation
@@ -408,11 +408,11 @@ public class SecurityConfig {
 
 ### **UDP Packet Processing**
 - [x] Server in ascolto su porta 5606
-- [ ] Parsing di tutti i 5 tipi di pacchetto
-- [ ] Validazione dimensioni e checksum
-- [ ] Error handling per pacchetti malformati
-- [ ] Logging statistico pacchetti ricevuti
-- [ ] Unit tests per ogni packet type
+- [x] Parsing di tutti i 5 tipi di pacchetto
+- [x] Validazione dimensioni e checksum
+- [x] Error handling per pacchetti malformati
+- [x] Logging statistico pacchetti ricevuti
+- [x] Unit tests per packet parser
 
 ### **WebSocket Streaming**
 - [ ] Endpoint `/ws/telemetry` funzionante
