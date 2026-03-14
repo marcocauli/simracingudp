@@ -102,6 +102,74 @@ A comprehensive racing telemetry management system with Spring Boot backend and 
 - Automobilista 2 (using Project CARS 1 UDP protocol)
 - Project CARS 1
 - Project CARS 2
+- Any simulator supported by SimHub (see below)
+
+---
+
+## Architecture: Direct UDP vs SimHub Middleware
+
+### Direct UDP (Native Protocol)
+
+Simulators that natively support Project CARS 1 UDP protocol can send data directly to this backend:
+
+```
+┌─────────────────┐      UDP (Project CARS 1)      ┐
+│   Simulatore    │ ──────────────────────────────────►│
+│                 │                                   │   Backend Server
+│ (es. AMS2, PC2) │                                   │   (UDP receiver)
+└─────────────────┘                                   └─────────────────────┘
+```
+
+### SimHub Middleware Architecture
+
+For simulators that use **shared memory** instead of UDP (iRacing, ACC, rFactor 2, etc.), use SimHub as middleware:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Macchina Simulator                       │
+│  ┌─────────────────┐         ┌─────────────────────────┐   │
+│  │   Simulatore    │         │        SimHub           │   │
+│  │                 │◄───────►│   - Legge shared mem    │   │
+│  │   (shared mem)  │         │   - Invia UDP custom    │   │
+│  └─────────────────┘         └───────────┬─────────────┘   │
+│                                          │                  │
+└──────────────────────────────────────────┼──────────────────┘
+                                           │ UDP
+                                           ▼
+                              ┌────────────────────────────┐
+                              │      Backend Server        │
+                              │   (UDP receiver simracing)│
+                              └────────────────────────────┘
+```
+
+#### Why Use SimHub?
+
+- **Universal compatibility**: Reads shared memory from 100+ simulators
+- **No custom client needed**: Avoids developing a client for each simulator
+- **Flexible UDP output**: Can send data in Project CARS 1 format or custom format
+- **Active development**: Maintained by community
+
+#### SimHub Configuration
+
+1. Download SimHub from https://www.simhubdash.com/
+2. Configure your simulator in SimHub (it automatically detects shared memory)
+3. Enable **UDP Custom** output plugin:
+   - Set destination IP to your backend server IP
+   - Set destination port to `5606` (or your configured port)
+   - Choose format: **Project CARS 1** (recommended - no backend changes needed)
+   - Alternatively, define custom format if needed
+
+4. Start SimHub and the backend - data will flow automatically
+
+#### Supported Simulators via SimHub
+
+SimHub supports shared memory reading for:
+- iRacing
+- Assetto Corsa Competizione
+- rFactor 2
+- F1 Series (EA)
+- Gran Turismo 7
+- And many more...
 
 ---
 
