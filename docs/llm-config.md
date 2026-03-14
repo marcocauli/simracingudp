@@ -151,13 +151,6 @@ cd frontend && npx tsc --noEmit
 - **Protocol**: UDP port 5606, packet types 0-4 (Telemetry, Race, Participants, Timings, GameState)
 - **Data Flow**: UDP reception → binary parsing → domain objects → persistence → WebSocket → Frontend
 
-### SimHub Middleware Architecture
-When simulators use shared memory instead of UDP (iRacing, ACC, rFactor 2, etc.), use SimHub as middleware:
-- **SimHub**: Reads from simulator shared memory, sends UDP to backend
-- **Backend**: Receives Project CARS 1 UDP format (already supported - no changes needed)
-- **Configuration**: Set SimHub UDP Custom plugin to destination IP:5606 with Project CARS 1 format
-- **Supported Simulators via SimHub**: iRacing, ACC, rFactor 2, F1 Series, Gran Turismo 7, and 100+ others
-
 ### Development Environment
 - **Editor**: VSCode with Angular extension
 - **Formatting**: EditorConfig with 2-space indentation, single quotes for TypeScript
